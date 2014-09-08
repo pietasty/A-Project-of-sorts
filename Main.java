@@ -35,6 +35,7 @@ public class Main extends JFrame {
 			EventQueue.invokeLater(new Runnable() {
 				public void run() {
 				try {	
+					System.out.println("hello");
 					Main play = new Main();
 					play.setVisible(true);
 				} catch (Exception e) {
