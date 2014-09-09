@@ -22,9 +22,8 @@ public class Main extends JFrame {
 			//set up screen
 			this.setTitle("VAMIX - Video Audio Mixer");
 			setSize(600, 350);
-			this.setMinimumSize(new Dimension(600,300));
+			this.setMinimumSize(new Dimension(900,500));
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-			JPanel master = new JPanel();
 			vamixTabs.add("Playback", playTab);
 			vamixTabs.add("Edit",editTab);
 			vamixTabs.add("Text",textTab);
@@ -34,7 +33,7 @@ public class Main extends JFrame {
 		public static void main(String[] args) {
 			EventQueue.invokeLater(new Runnable() {
 				public void run() {
-				try {	
+				try {
 					Main play = new Main();
 					play.setVisible(true);
 				} catch (Exception e) {
