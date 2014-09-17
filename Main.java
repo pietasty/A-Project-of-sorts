@@ -12,18 +12,27 @@ import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 import com.sun.jna.Native;
 
 public class Main extends JFrame {
+	private static Main instance;
+	
+	public static Main getInstance(){
+		if (instance == null){
+			instance = new Main();
+		}
+		return instance;
+	}
+	
 	//define frames
 	JTabbedPane vamixTabs = new JTabbedPane();
 	Download downloads = new Download();
 	Edit editTab = new Edit();
 	Text textTab = new Text();
 
-	public Main() {
+	private Main() {
 		//set up screen
 		this.setTitle("VAMIX - Video Audio Mixer");
 		setSize(600, 350);
 		this.setMinimumSize(new Dimension(900,500));
-		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		vamixTabs.add("Playback", Playback.getInstance());
 		vamixTabs.add("Edit",editTab);
 		vamixTabs.add("Text",textTab);
@@ -37,7 +46,7 @@ public class Main extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Main play = new Main();
+					Main play = Main.getInstance();
 					play.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();

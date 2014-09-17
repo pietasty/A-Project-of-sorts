@@ -3,12 +3,12 @@ package se206_a03;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 
 import java.awt.BorderLayout;
 import java.awt.Image;
-import java.io.File;
 import java.io.IOException;
 
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
@@ -17,14 +17,18 @@ import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import java.awt.event.HierarchyBoundsAdapter;
+import java.awt.event.HierarchyEvent;
 
 public class Playback extends JPanel {
 	private static Playback instance;
 	
 	private EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	private EmbeddedMediaPlayer video;
+	private JPanel videoPanel;
 	
 	private JButton play;
 	private JButton pause;
@@ -47,6 +51,11 @@ public class Playback extends JPanel {
 	}
 
 	private Playback() {
+		addHierarchyBoundsListener(new HierarchyBoundsAdapter() {
+			public void ancestorResized(HierarchyEvent e) {
+				resize();
+			}
+		});
 		this.setVisible(true);
 		setSize(900, 500);
 		setLayout(null);
@@ -65,12 +74,12 @@ public class Playback extends JPanel {
 	}
 
 	private void addPlayer() {
-		JPanel videoPanel = new JPanel(new BorderLayout());
+		videoPanel = new JPanel(new BorderLayout());
 		mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
 		video = mediaPlayerComponent.getMediaPlayer();
-
+		
 		videoPanel.add(mediaPlayerComponent, BorderLayout.CENTER);
-		videoPanel.setBounds(0, 0, 900, 400);
+		videoPanel.setBounds(0, 0, 900, 425);
 		videoPanel.setVisible(true);
 
 		add(videoPanel);
@@ -83,7 +92,7 @@ public class Playback extends JPanel {
 		
 		play.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (video.canPause()){
+				if (video.isPlayable()){
 					video.pause();
 					pause.setVisible(true);
 					play.setVisible(false);
@@ -91,7 +100,7 @@ public class Playback extends JPanel {
 					video.playMedia(mediafile);
 					pause.setVisible(true);
 					play.setVisible(false);
-					toggleButtons(true);
+					toggleStopButtons(true);
 				}
 			}
 		});
@@ -129,7 +138,7 @@ public class Playback extends JPanel {
 				video.stop();
 				pause.setVisible(false);
 				play.setVisible(true);
-				toggleButtons(false);
+				toggleStopButtons(false);
 			}
 		});
 		
@@ -178,12 +187,16 @@ public class Playback extends JPanel {
 		mute.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if(video.isMute()){
+					if(video.getVolume() == 0){
+						video.setVolume(100);
+						setIcon(sound,"/se206_a03/icons/lowsound.png");
+					}
 					video.mute(false);
 					setIcon(mute,"/se206_a03/icons/mute.png");
 					
 				} else {
 					video.mute(true);
-					setIcon(mute,"/se206_a03/icons/highsound.png");
+					setIcon(mute,"/se206_a03/icons/lowsound.png");
 				}
 			}
 		});
@@ -236,15 +249,13 @@ public class Playback extends JPanel {
 				
 				if(vol == 0 ){
 					setIcon(sound,"/se206_a03/icons/mute.png");
-				} else if (vol > 50){
-					setIcon(sound,"/se206_a03/icons/highsound.png");
 				} else {
-					setIcon(sound,"/se206_a03/icons/lowsound.png");
+					setIcon(sound,"/se206_a03/icons/highsound.png");
 				}
 			}
 		});
 		
-		volume.setBounds(700,435,151,32);
+		volume.setBounds(701,435,150,32);
 		volume.setVisible(false);
 		add(volume);
 	}
@@ -264,7 +275,7 @@ public class Playback extends JPanel {
 					pause.setVisible(true);
 					play.setVisible(false);
 					play.setEnabled(true);
-					toggleButtons(true);
+					toggleStopButtons(true);
 				}
 
 				jfile.setVisible(true);
@@ -275,7 +286,6 @@ public class Playback extends JPanel {
 	}
 	
 	
-	
 	private void setIcon(JButton button,String location){
 		try {
 			Image img = ImageIO.read(getClass().getResource(location));
@@ -284,11 +294,28 @@ public class Playback extends JPanel {
 		}
 	}
 	
-	private void toggleButtons(boolean b){
+	private void toggleStopButtons(boolean b){
 		stop.setEnabled(b);
 		back.setEnabled(b);
 		forward.setEnabled(b);
 		mute.setEnabled(b);
 		sound.setEnabled(b);
 	}
+	
+	private void resize(){
+		int x = Main.getInstance().getWidth();
+		int y = Main.getInstance().getHeight();
+		
+		play.setLocation((x/2)-34, y-65);
+		pause.setLocation((x/2)-34, y-65);
+		stop.setLocation((x/2)+2, y-65);
+		back.setLocation((x/2)-71, y-65);
+		forward.setLocation((x/2)+39, y-65);
+		chooser.setLocation(12,y-65);
+		sound.setLocation(x-44, y-65);
+		mute.setLocation(x-81,y-65);
+		volume.setLocation(x-231, y-65);
+		videoPanel.setSize(x, y-75);
+	}
+
 }
