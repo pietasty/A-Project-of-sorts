@@ -30,7 +30,7 @@ public class Main extends JFrame {
 	private Main() {
 		//set up screen
 		this.setTitle("VAMIX - Video Audio Mixer");
-		setSize(600, 350);
+		setSize(900, 400);
 		this.setMinimumSize(new Dimension(900,500));
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		vamixTabs.add("Playback", Playback.getInstance());
