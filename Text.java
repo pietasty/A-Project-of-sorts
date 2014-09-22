@@ -41,6 +41,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JComboBox;
 import javax.swing.JTextArea;
@@ -86,11 +88,11 @@ public class Text extends JPanel{
 	private String startDuration = "5"; //initialize duration as 5 seconds
 	private String endDuration = "5";
 	private Font font = new Font(Font.SANS_SERIF, 0, 12); //default font. gets changed
-	JComboBox<String> fontsizeSelect = new JComboBox<String>();
-	JComboBox<String> fontSelect = new JComboBox<String>();
-	JComboBox<String> colorSelect = new JComboBox<String>();
-	JComboBox<String> startTimeSelect = new JComboBox<String>();
-	JComboBox<String> endTimeSelect = new JComboBox<String>();
+	private JComboBox<String> fontsizeSelect = new JComboBox<String>();
+	private JComboBox<String> fontSelect = new JComboBox<String>();
+	private JComboBox<String> colorSelect = new JComboBox<String>();
+	private JComboBox<String> startTimeSelect = new JComboBox<String>();
+	private JComboBox<String> endTimeSelect = new JComboBox<String>();
 	//define the length of time we want to allow
 	private String[] times = {"05","10","15","20","30","40","50"};
 	//define font colors in a String array
@@ -199,14 +201,21 @@ public class Text extends JPanel{
 				JFileChooser fileSelector = new JFileChooser();
 				fileSelector.showOpenDialog(Text.this);
 				try {
+					//get File object of selected file
 					selectedFile = fileSelector.getSelectedFile().getAbsoluteFile();
+					//get absolute path (includes name of file) in fileDir
 					fileDir = fileSelector.getSelectedFile().getAbsolutePath();
+					//set label GUI component
 					filenameLabel.setText("Selected file: " + selectedFile.getName());
 					filenameLabel.setVisible(true);
 					filenameLabel.setFont(new Font(Font.SANS_SERIF,0,10));
+					//get path of file (excluding file name)
 					filepath = fileDir.substring(0, fileDir.lastIndexOf(File.separator));
+					//set the outputFile (unsaved file) as a dot file of selectedFile
 					outputFile = new File(filepath + "/." + selectedFile.getName());
 					addTxtButton.setEnabled(true);
+					//Playback.mediaFile = fileDir;
+					Playback.getInstance().playDownloadedVideo(fileDir);
 				} catch (NullPointerException e) {
 					return; //return since no file was selected
 				}
@@ -479,12 +488,16 @@ public class Text extends JPanel{
 		@Override
 		protected Void doInBackground() throws Exception {
 			Files.deleteIfExists(outputFile.toPath()); //overwrite previous text operation
-			String cmd = "avconv -i \"" + fileDir + "\" -t 00:00:" + startDuration
+			//get framerate of video
+			String framerate = getFrameRate();
+			//bash command to apply text
+			String cmd = "avconv -i \"" + fileDir + "\" "
 					+ " -vf \"drawtext="
 					+ "fontfile=\'" + Fonts.valueOf(currentFont)._path + "\': "
 					+ "text=\'" + _title + "\':"
 					+ "x=10:y=10:fontsize=" + font.getSize() + ":"
-					+ "fontcolor=" + fontColor + "\" " 
+					+ "fontcolor=" + fontColor + ":"
+					+ "draw=\'lt(n,$((" + framerate + "*" + startDuration + ")))\'\" " 
 					+ outputFile.getAbsolutePath();
 			ProcessBuilder builder = new ProcessBuilder("/bin/bash","-c",cmd);
 	    	builder.redirectErrorStream(true); //redirect error to stdout
@@ -494,6 +507,7 @@ public class Text extends JPanel{
 	    	String line;
 	    	while ((line = stdout.readLine()) != null && !isCancelled()) {
 	    		System.out.println(line);
+	    		//TODO: Handle data processing
 	    	}
 	    	System.out.println(avconv.waitFor());
 	    	avconv.destroy();
@@ -507,6 +521,44 @@ public class Text extends JPanel{
 			play.setVisible(false);
 			play.setEnabled(true);
 			toggleStopButtons(true);
+		}
+		
+		/**
+		 * This helper method gets the frame rate of the video file we are using
+		 * by also being run in background with rest of SwingWorker.
+		 * @return
+		 * @throws Exception
+		 */
+		private String getFrameRate() throws Exception {
+			String printCommand = "avconv -i \"" + fileDir + "\""; //prints data of file
+			//usual process setting up and starting
+			Process printMetadata;
+			ProcessBuilder avconv = new ProcessBuilder("/bin/bash","-c",printCommand);
+			printMetadata = avconv.start();
+			/* Read error stream into java input stream.
+			 * This works because our printCommand doesn't specify and output file
+			 * for avconv (since we just want to print the file details). This means
+			 * the output generated will be error stream (took way too long to figure this out :P ) 
+			 */
+			InputStream output = printMetadata.getErrorStream();
+			BufferedReader stdout = new BufferedReader(new InputStreamReader(output));
+			String line;
+			while ((line = stdout.readLine()) != null) {
+				//check if line matches pattern
+				//pattern is 1 or more digits followed by SPACE fps
+				Matcher match = Pattern.compile("\\d+ fps").matcher(line);
+				if (match.find()) {
+					int startIndex = match.start();
+					int endIndex = match.end();
+					//create substring where match occurred and remove non-digits
+					String frameRate = line.substring(startIndex,endIndex).replaceAll("[^0-9]", "");
+					System.out.println(frameRate);
+					printMetadata.destroy(); //kill process
+					return frameRate;
+				}
+			}
+			printMetadata.destroy(); //kill process
+			return "24"; //default frame rate value of 24 if something doesn't work
 		}
 		
 	}
