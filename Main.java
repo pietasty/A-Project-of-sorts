@@ -5,6 +5,8 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import uk.co.caprica.vlcj.binding.LibVlc;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
@@ -23,20 +25,26 @@ public class Main extends JFrame {
 	
 	//define frames
 	JTabbedPane vamixTabs = new JTabbedPane();
-	Download downloads = new Download();
 	Edit editTab = new Edit();
 	Text textTab = new Text();
 
 	private Main() {
-		//set up screen
+		// set up screen
 		this.setTitle("VAMIX - Video Audio Mixer");
 		setSize(900, 400);
-		this.setMinimumSize(new Dimension(900,500));
+		this.setMinimumSize(new Dimension(900, 500));
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		vamixTabs.add("Playback", Playback.getInstance());
-		vamixTabs.add("Edit",editTab);
-		vamixTabs.add("Text",textTab);
-		vamixTabs.add("Download",downloads);
+		vamixTabs.add("Edit", editTab);
+		vamixTabs.add("Text", textTab);
+		vamixTabs.add("Download", Download.getInstance());
+		vamixTabs.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!(vamixTabs.getSelectedComponent().equals(Playback.getInstance()))) {
+					Playback.getInstance().pauseVideo();
+				}
+			}
+		});
 		this.getContentPane().add(vamixTabs);
 	}
 

@@ -3,11 +3,14 @@ package se206_a03;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.Timer;
 
 import java.awt.BorderLayout;
+import java.awt.Font;
 import java.awt.Image;
 import java.io.IOException;
 
@@ -22,6 +25,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.HierarchyBoundsAdapter;
 import java.awt.event.HierarchyEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.MouseEvent;
 
 public class Playback extends JPanel {
 	private static Playback instance;
@@ -29,19 +34,25 @@ public class Playback extends JPanel {
 	private EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	private EmbeddedMediaPlayer video;
 	private JPanel videoPanel;
+	private JSlider videoScroller;
+	private JLabel videoTimer;
 	
 	private JButton play;
 	private JButton pause;
 	private JButton stop;
+
 	private JButton back;
 	private JButton forward;
+	//records how fast to fast forward or back.
+	private int speed;
+	private Timer timer;
 	
 	private JButton mute;
 	private JButton sound;
 	private JSlider volume;
 	
 	private JButton chooser;
-	private String mediafile;
+	private String mediaFile;
 
 	public static Playback getInstance() {
 		if (instance == null) {
@@ -61,11 +72,45 @@ public class Playback extends JPanel {
 		setLayout(null);
 		
 		addPlayer();
+		addVideoScroller();
+		addTimeLabel();
+		
 		playButton();
 		pauseButton();
 		stopButton();
+		
 		backButton();
 		forwardButton();
+		speed = 0;
+		timer = new Timer(100, new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(video.getTime() == 0 || video.getTime() == video.getLength()){
+					speed = 0;
+					timer.stop();
+				}
+				switch (speed){
+				case -3:
+					video.skip(-5000);
+					break;
+				case -2:
+					video.skip(-2000);
+					break;
+				case -1:
+					video.skip(-1000);
+					break;
+				case 1:
+					video.skip(1000);
+					break;
+				case 2:
+					video.skip(2000);
+					break;
+				case 3:
+					video.skip(5000);
+					break;
+				default:
+				}
+			}
+		});
 		
 		muteButton();
 		soundButton();
@@ -79,10 +124,53 @@ public class Playback extends JPanel {
 		video = mediaPlayerComponent.getMediaPlayer();
 		
 		videoPanel.add(mediaPlayerComponent, BorderLayout.CENTER);
-		videoPanel.setBounds(0, 0, 900, 425);
+		videoPanel.setLocation(0,0);
 		videoPanel.setVisible(true);
 
 		add(videoPanel);
+	}
+	
+	private void addVideoScroller(){
+		videoScroller = new JSlider(JSlider.HORIZONTAL);
+		videoScroller.setValue(0);
+		add(videoScroller);
+	}
+	
+	private void addTimeLabel(){
+		videoTimer = new JLabel("00:00:00");
+		videoTimer.setSize(60,25);
+		add(videoTimer);
+		
+		Timer clock = new Timer(500, new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int time = (int) (video.getTime()/1000);
+				videoScroller.setValue(time);
+				videoScroller.setMaximum((int)video.getLength()/1000);
+				
+				if(time == 0){
+					videoTimer.setText("00:00:00");
+				} else {
+					int second = time%60;
+					int min = time/60;
+					int minute = min%60;
+					int hour = min/60;
+					String h = Integer.toString(hour);
+					String m = Integer.toString(minute);
+					String s = Integer.toString(second);
+					if(second < 10){
+						s="0"+s;
+					}
+					if(minute < 10){
+						m="0"+m;
+					}
+					if(hour < 10){
+						h="0"+h;
+					}
+					videoTimer.setText(h+":"+m+":"+s);
+				}
+			}
+		});
+		clock.start();
 	}
 
 	private void playButton() {
@@ -92,12 +180,15 @@ public class Playback extends JPanel {
 		
 		play.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (video.isPlayable()){
+				timer.stop();
+				if (speed != 0) {
+					speed = 0;
+				} else if (!(video.isPlaying())) {
 					video.pause();
 					pause.setVisible(true);
 					play.setVisible(false);
 				} else {
-					video.playMedia(mediafile);
+					video.playMedia(mediaFile);
 					pause.setVisible(true);
 					play.setVisible(false);
 					toggleStopButtons(true);
@@ -106,7 +197,7 @@ public class Playback extends JPanel {
 		});
 		
 		play.setEnabled(false);
-		play.setBounds(416, 435, 32, 32);
+		play.setSize(32,32);
 		add(play);
 	}
 	
@@ -124,7 +215,7 @@ public class Playback extends JPanel {
 		});
 		
 		pause.setVisible(false);
-		pause.setBounds(416, 435, 32, 32);
+		pause.setSize(32,32);
 		add(pause);
 	}
 	
@@ -135,6 +226,8 @@ public class Playback extends JPanel {
 		
 		stop.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				speed = 0;
+				timer.stop();
 				video.stop();
 				pause.setVisible(false);
 				play.setVisible(true);
@@ -143,7 +236,7 @@ public class Playback extends JPanel {
 		});
 		
 		stop.setEnabled(false);
-		stop.setBounds(452, 435, 32, 32);
+		stop.setSize(32,32);
 		add(stop);
 	}
 	
@@ -154,12 +247,17 @@ public class Playback extends JPanel {
 		
 		back.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				video.skip(-1000);
+				if(speed>-3){
+					speed--;
+				}
+				play.setVisible(true);
+				pause.setVisible(false);
+				timer.start();
 			}
 		});
 		
 		back.setEnabled(false);
-		back.setBounds(379, 435, 32, 32);
+		back.setSize(32,32);;
 		add(back);
 	}
 	
@@ -170,12 +268,17 @@ public class Playback extends JPanel {
 		
 		forward.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				video.skip(1000);
+				if(speed<3){
+					speed++;
+				}
+				play.setVisible(true);
+				pause.setVisible(false);
+				timer.start();
 			}
 		});
 		
 		forward.setEnabled(false);
-		forward.setBounds(489, 435, 32, 32);
+		forward.setSize(32,32);
 		add(forward);
 	}
 	
@@ -189,11 +292,10 @@ public class Playback extends JPanel {
 				if(video.isMute()){
 					if(video.getVolume() == 0){
 						video.setVolume(100);
-						setIcon(sound,"/se206_a03/icons/lowsound.png");
+						setIcon(sound,"/se206_a03/icons/highsound.png");
 					}
 					video.mute(false);
 					setIcon(mute,"/se206_a03/icons/mute.png");
-					
 				} else {
 					video.mute(true);
 					setIcon(mute,"/se206_a03/icons/lowsound.png");
@@ -202,7 +304,7 @@ public class Playback extends JPanel {
 		});
 		
 		mute.setEnabled(false);
-		mute.setBounds(819,435,32,32);
+		mute.setSize(32,32);
 		add(mute);
 	}
 	
@@ -216,7 +318,7 @@ public class Playback extends JPanel {
 				if(volume.isVisible()){
 					if(video.getVolume() == 0){
 						video.mute(true);
-						setIcon(mute,"/se206_a03/icons/highsound.png");
+						setIcon(mute,"/se206_a03/icons/lowsound.png");
 					} else {
 						setIcon(mute,"/se206_a03/icons/mute.png");
 					}
@@ -236,7 +338,7 @@ public class Playback extends JPanel {
 		});
 		
 		sound.setEnabled(false);
-		sound.setBounds(856, 435, 32, 32);
+		sound.setSize(32,32);
 		add(sound);
 	}
 	
@@ -254,8 +356,7 @@ public class Playback extends JPanel {
 				}
 			}
 		});
-		
-		volume.setBounds(701,435,150,32);
+		volume.setSize(150,32);
 		volume.setVisible(false);
 		add(volume);
 	}
@@ -270,8 +371,8 @@ public class Playback extends JPanel {
 
 				int response = jfile.showOpenDialog(null);
 				if (response == JFileChooser.APPROVE_OPTION) {
-					mediafile = jfile.getSelectedFile().toString();
-					video.playMedia(mediafile);
+					mediaFile = jfile.getSelectedFile().toString();
+					video.playMedia(mediaFile);
 					pause.setVisible(true);
 					play.setVisible(false);
 					play.setEnabled(true);
@@ -281,10 +382,9 @@ public class Playback extends JPanel {
 				jfile.setVisible(true);
 			}
 		});
-		chooser.setBounds(12, 435, 116, 32);
+		chooser.setSize(116,32);
 		add(chooser);
 	}
-	
 	
 	private void setIcon(JButton button,String location){
 		try {
@@ -315,7 +415,26 @@ public class Playback extends JPanel {
 		sound.setLocation(x-44, y-65);
 		mute.setLocation(x-81,y-65);
 		volume.setLocation(x-231, y-65);
-		videoPanel.setSize(x, y-75);
+		videoPanel.setSize(x, y-100);
+		videoTimer.setLocation(x-65,y-100);
+		videoScroller.setBounds(0, y-100, x-65, 25);
 	}
-
+	
+	public void playDownloadedVideo(String downloadedFile){
+		mediaFile = downloadedFile;
+		video.stop();
+		video.playMedia(mediaFile);
+		pause.setVisible(true);
+		play.setVisible(false);
+		play.setEnabled(true);
+		toggleStopButtons(true);
+	}
+	
+	public void pauseVideo(){
+		if (video.isPlaying()){
+			video.pause();
+			play.setVisible(true);
+			pause.setVisible(false);
+		}
+	}
 }
