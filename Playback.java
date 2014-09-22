@@ -124,7 +124,7 @@ public class Playback extends JPanel {
 		video = mediaPlayerComponent.getMediaPlayer();
 		
 		videoPanel.add(mediaPlayerComponent, BorderLayout.CENTER);
-		videoPanel.setBounds(0, 0, 900, 400);
+		videoPanel.setLocation(0,0);
 		videoPanel.setVisible(true);
 
 		add(videoPanel);
@@ -133,13 +133,12 @@ public class Playback extends JPanel {
 	private void addVideoScroller(){
 		videoScroller = new JSlider(JSlider.HORIZONTAL);
 		videoScroller.setValue(0);
-		videoScroller.setBounds(0,400,835,25);
 		add(videoScroller);
 	}
 	
 	private void addTimeLabel(){
 		videoTimer = new JLabel("00:00:00");
-		videoTimer.setBounds(835, 400, 60, 25);
+		videoTimer.setSize(60,25);
 		add(videoTimer);
 		
 		Timer clock = new Timer(500, new ActionListener() {
@@ -198,7 +197,7 @@ public class Playback extends JPanel {
 		});
 		
 		play.setEnabled(false);
-		play.setBounds(416, 435, 32, 32);
+		play.setSize(32,32);
 		add(play);
 	}
 	
@@ -216,7 +215,7 @@ public class Playback extends JPanel {
 		});
 		
 		pause.setVisible(false);
-		pause.setBounds(416, 435, 32, 32);
+		pause.setSize(32,32);
 		add(pause);
 	}
 	
@@ -237,7 +236,7 @@ public class Playback extends JPanel {
 		});
 		
 		stop.setEnabled(false);
-		stop.setBounds(452, 435, 32, 32);
+		stop.setSize(32,32);
 		add(stop);
 	}
 	
@@ -258,7 +257,7 @@ public class Playback extends JPanel {
 		});
 		
 		back.setEnabled(false);
-		back.setBounds(379, 435, 32, 32);
+		back.setSize(32,32);;
 		add(back);
 	}
 	
@@ -279,7 +278,7 @@ public class Playback extends JPanel {
 		});
 		
 		forward.setEnabled(false);
-		forward.setBounds(489, 435, 32, 32);
+		forward.setSize(32,32);
 		add(forward);
 	}
 	
@@ -293,11 +292,10 @@ public class Playback extends JPanel {
 				if(video.isMute()){
 					if(video.getVolume() == 0){
 						video.setVolume(100);
-						setIcon(sound,"/se206_a03/icons/lowsound.png");
+						setIcon(sound,"/se206_a03/icons/highsound.png");
 					}
 					video.mute(false);
 					setIcon(mute,"/se206_a03/icons/mute.png");
-					
 				} else {
 					video.mute(true);
 					setIcon(mute,"/se206_a03/icons/lowsound.png");
@@ -306,7 +304,7 @@ public class Playback extends JPanel {
 		});
 		
 		mute.setEnabled(false);
-		mute.setBounds(819,435,32,32);
+		mute.setSize(32,32);
 		add(mute);
 	}
 	
@@ -320,7 +318,7 @@ public class Playback extends JPanel {
 				if(volume.isVisible()){
 					if(video.getVolume() == 0){
 						video.mute(true);
-						setIcon(mute,"/se206_a03/icons/highsound.png");
+						setIcon(mute,"/se206_a03/icons/lowsound.png");
 					} else {
 						setIcon(mute,"/se206_a03/icons/mute.png");
 					}
@@ -340,7 +338,7 @@ public class Playback extends JPanel {
 		});
 		
 		sound.setEnabled(false);
-		sound.setBounds(856, 435, 32, 32);
+		sound.setSize(32,32);
 		add(sound);
 	}
 	
@@ -358,8 +356,7 @@ public class Playback extends JPanel {
 				}
 			}
 		});
-		
-		volume.setBounds(701,435,150,32);
+		volume.setSize(150,32);
 		volume.setVisible(false);
 		add(volume);
 	}
@@ -385,10 +382,9 @@ public class Playback extends JPanel {
 				jfile.setVisible(true);
 			}
 		});
-		chooser.setBounds(12, 435, 116, 32);
+		chooser.setSize(116,32);
 		add(chooser);
 	}
-	
 	
 	private void setIcon(JButton button,String location){
 		try {

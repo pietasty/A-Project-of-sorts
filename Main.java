@@ -40,7 +40,9 @@ public class Main extends JFrame {
 		vamixTabs.add("Download", Download.getInstance());
 		vamixTabs.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
-				Playback.getInstance().pauseVideo();
+				if (!(vamixTabs.getSelectedComponent().equals(Playback.getInstance()))) {
+					Playback.getInstance().pauseVideo();
+				}
 			}
 		});
 		this.getContentPane().add(vamixTabs);
