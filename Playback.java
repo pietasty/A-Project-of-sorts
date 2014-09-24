@@ -183,15 +183,15 @@ public class Playback extends JPanel {
 				timer.stop();
 				if (speed != 0) {
 					speed = 0;
-				} else if (!(video.isPlaying())) {
-					video.pause();
-					pause.setVisible(true);
-					play.setVisible(false);
-				} else {
+				} else if (!(stop.isEnabled())) {
 					video.playMedia(mediaFile);
 					pause.setVisible(true);
 					play.setVisible(false);
 					toggleStopButtons(true);
+				} else if (!(video.isPlaying())) {
+					video.pause();
+					pause.setVisible(true);
+					play.setVisible(false);
 				}
 			}
 		});
