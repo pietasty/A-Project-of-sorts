@@ -12,17 +12,20 @@ import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.Image;
+import java.io.File;
 import java.io.IOException;
 
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 
 import javax.swing.JButton;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+
 import java.awt.event.HierarchyBoundsAdapter;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -52,7 +55,6 @@ public class Playback extends JPanel {
 	private JSlider volume;
 	
 	private JButton chooser;
-	public String mediaFile;
 
 	public static Playback getInstance() {
 		if (instance == null) {
@@ -184,7 +186,7 @@ public class Playback extends JPanel {
 				if (speed != 0) {
 					speed = 0;
 				} else if (!(stop.isEnabled())) {
-					video.playMedia(mediaFile);
+					video.playMedia(Main.getInstance().original.getAbsolutePath());
 					pause.setVisible(true);
 					play.setVisible(false);
 					toggleStopButtons(true);
@@ -371,8 +373,8 @@ public class Playback extends JPanel {
 
 				int response = jfile.showOpenDialog(null);
 				if (response == JFileChooser.APPROVE_OPTION) {
-					mediaFile = jfile.getSelectedFile().toString();
-					video.playMedia(mediaFile);
+					Main.getInstance().original = jfile.getSelectedFile();
+					video.playMedia(Main.getInstance().original.getAbsolutePath());
 					pause.setVisible(true);
 					play.setVisible(false);
 					play.setEnabled(true);
@@ -421,9 +423,9 @@ public class Playback extends JPanel {
 	}
 	
 	public void playDownloadedVideo(String downloadedFile){
-		mediaFile = downloadedFile;
+		Main.getInstance().original = new File(downloadedFile);
 		video.stop();
-		video.playMedia(mediaFile);
+		video.playMedia(Main.getInstance().original.getAbsolutePath());
 		pause.setVisible(true);
 		play.setVisible(false);
 		play.setEnabled(true);

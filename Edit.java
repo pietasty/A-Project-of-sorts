@@ -1,6 +1,7 @@
 package se206_a03;
 
 import javax.swing.BoxLayout;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -9,6 +10,7 @@ import javax.swing.SwingWorker;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridLayout;
 
 import javax.swing.JButton;
@@ -20,6 +22,7 @@ import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -28,10 +31,23 @@ import java.util.concurrent.ExecutionException;
 
 public class Edit extends JPanel{
 	
+	private static Edit instance;
+	
+	public static Edit getInstance() {
+		if (instance == null) {
+			instance = new Edit();
+		}
+		return instance;
+	}
 	private EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	private EmbeddedMediaPlayer video;
+	protected JLabel filenameLabel = new JLabel("");
+	private JButton chooser = new JButton("Choose file");
+	private String fileDir; //absolute path (includes file name
+	private String filepath; //path of file without file name
+	private File inputFile;
 	
-	public Edit() {
+	private Edit() {
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		
 		//add video preview
@@ -89,6 +105,43 @@ public class Edit extends JPanel{
 			}
 		});
 		buttonPanel.add(overlayAudio);
+		
+		//create file chooser panel
+				JPanel choosePanel = new JPanel();
+				choosePanel.setLayout(new BorderLayout());
+				choosePanel.setMaximumSize(new Dimension(400,30));
+				choosePanel.add(chooser, BorderLayout.WEST); //add choose file
+				//set action listener to open up file chooser
+				chooser.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent event) {
+						//open file chooser in new window
+						JFileChooser fileSelector = new JFileChooser();
+						fileSelector.showOpenDialog(Edit.this);
+						try {
+							//get File object of selected file
+							Main.getInstance().original = fileSelector.getSelectedFile().getAbsoluteFile();
+							//get absolute path (includes name of file) in fileDir
+							fileDir = fileSelector.getSelectedFile().getAbsolutePath();
+							//set label GUI component
+							filenameLabel.setText("Selected file: " + Main.getInstance().original.getName());
+							filenameLabel.setVisible(true);
+							filenameLabel.setFont(new Font(Font.SANS_SERIF,0,10));
+							//get path of file (excluding file name)
+							filepath = fileDir.substring(0, fileDir.lastIndexOf(File.separator));
+							//set the outputFile (unsaved file) as a dot file of selectedFile
+							inputFile = new File(filepath + "/." + Main.getInstance().original.getName());
+							Playback.getInstance().playDownloadedVideo(fileDir);
+						} catch (NullPointerException e) {
+							return; //return since no file was selected
+						}
+					}			
+				});
+				
+				choosePanel.add(filenameLabel, BorderLayout.EAST);
+				filenameLabel.setPreferredSize(new Dimension(250,30));
+				videoPanel.add(choosePanel); //add file chooser panel to GUI
 	}
 
 }

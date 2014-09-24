@@ -18,6 +18,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JEditorPane;
 import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -52,11 +53,16 @@ public class Text extends JPanel{
 	
 	/*
 	 * TODO: 	* Check text input contains invalid characters such as :;/[]{}
-	 * 			* Get the duration to only apply to text filter, not whole video
-	 * 			* Get all video formats working
-	 * 			* Get progress bar running
 	 * 			* Get title and end text to work and check input duration isn't too long
 	 */
+	private static Text instance;
+	
+	public static Text getInstance() {
+		if (instance == null) {
+			instance = new Text();
+		}
+		return instance;
+	}
 	
 	private JButton play = new JButton();
 	private JButton pause = new JButton();
@@ -85,9 +91,8 @@ public class Text extends JPanel{
 	private JEditorPane startText = new JEditorPane();
 	private JEditorPane endText = new JEditorPane();
 	private JProgressBar progress = new JProgressBar(); //initialize a progress bar
-	private File selectedFile;
 	private File outputFile;
-	private JLabel filenameLabel = new JLabel("Selected file:");
+	protected JLabel filenameLabel = new JLabel("");
 	private String fileDir; //absolute path (includes file name
 	private String filepath; //path of file without file name
 	private TextWorker addText;
@@ -174,7 +179,7 @@ public class Text extends JPanel{
 		
 	};
 	
-	public Text() {
+	private Text() {
 		setLayout(new BorderLayout()); //set layout of entire frame
 		JPanel mainPanel = new JPanel(); 
 		mainPanel.setLayout(new GridLayout(1,2)); //all main components in grid
@@ -213,17 +218,17 @@ public class Text extends JPanel{
 				fileSelector.showOpenDialog(Text.this);
 				try {
 					//get File object of selected file
-					selectedFile = fileSelector.getSelectedFile().getAbsoluteFile();
+					Main.getInstance().original = fileSelector.getSelectedFile().getAbsoluteFile();
 					//get absolute path (includes name of file) in fileDir
 					fileDir = fileSelector.getSelectedFile().getAbsolutePath();
 					//set label GUI component
-					filenameLabel.setText("Selected file: " + selectedFile.getName());
+					filenameLabel.setText("Selected file: " + Main.getInstance().original.getName());
 					filenameLabel.setVisible(true);
 					filenameLabel.setFont(new Font(Font.SANS_SERIF,0,10));
 					//get path of file (excluding file name)
 					filepath = fileDir.substring(0, fileDir.lastIndexOf(File.separator));
 					//set the outputFile (unsaved file) as a dot file of selectedFile
-					outputFile = new File(filepath + "/." + selectedFile.getName());
+					outputFile = new File(filepath + "/." + Main.getInstance().original.getName());
 					addTxtButton.setEnabled(true);
 					//Playback.mediaFile = fileDir;
 					Playback.getInstance().playDownloadedVideo(fileDir);
@@ -331,11 +336,14 @@ public class Text extends JPanel{
 			public void actionPerformed(ActionEvent e) {
 				String title = startText.getText();
 				String credits = endText.getText();
-				addText = new TextWorker(title,credits);
-				addText.execute(); //execute swing worker class
+				if (Main.getInstance().original != null) {
+					addText = new TextWorker(title,credits);
+					addText.execute(); //execute swing worker class
+				} else {
+					JOptionPane.showMessageDialog(null, "Error: Please select a valid file");
+				}
 			}
 		});
-		addTxtButton.setEnabled(false); //initially disabled until file is chosen
 		JPanel btnPanel = new JPanel();
 		btnPanel.setLayout(new BorderLayout());
 		btnPanel.setMaximumSize(new Dimension(300,45));
