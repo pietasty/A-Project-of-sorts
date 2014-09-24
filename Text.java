@@ -41,6 +41,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JComboBox;
 import javax.swing.JTextArea;
@@ -66,19 +69,29 @@ public class Text extends JPanel{
 	private JButton chooser = new JButton("Choose file");
 	private JButton addTxtButton = new JButton("Add text");
 	private JButton saveButton = new JButton("Save changes");
+	private JButton cancelText = new JButton("Cancel");
+	
+	/*
+	 * These fields represent data about the media file represented as Strings
+	 */
+	private String width; //width of video resolution
+	private String height; //height of video resolution
+	private String framerate; //framerate of video
+	private String duration; //length of video
 	
 	
 	private EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	private EmbeddedMediaPlayer video;
 	private JEditorPane startText = new JEditorPane();
 	private JEditorPane endText = new JEditorPane();
-	private JProgressBar progress;
+	private JProgressBar progress = new JProgressBar(); //initialize a progress bar
 	private File selectedFile;
 	private File outputFile;
 	private JLabel filenameLabel = new JLabel("Selected file:");
 	private String fileDir; //absolute path (includes file name
 	private String filepath; //path of file without file name
 	private TextWorker addText;
+	private JPanel progressPanel = new JPanel();
 	private JEditorPane textPreview = new JEditorPane(); //text previewer
 	private String currentFont;
 	private String currentFontSize;
@@ -86,11 +99,11 @@ public class Text extends JPanel{
 	private String startDuration = "5"; //initialize duration as 5 seconds
 	private String endDuration = "5";
 	private Font font = new Font(Font.SANS_SERIF, 0, 12); //default font. gets changed
-	JComboBox<String> fontsizeSelect = new JComboBox<String>();
-	JComboBox<String> fontSelect = new JComboBox<String>();
-	JComboBox<String> colorSelect = new JComboBox<String>();
-	JComboBox<String> startTimeSelect = new JComboBox<String>();
-	JComboBox<String> endTimeSelect = new JComboBox<String>();
+	private JComboBox<String> fontsizeSelect = new JComboBox<String>();
+	private JComboBox<String> fontSelect = new JComboBox<String>();
+	private JComboBox<String> colorSelect = new JComboBox<String>();
+	private JComboBox<String> startTimeSelect = new JComboBox<String>();
+	private JComboBox<String> endTimeSelect = new JComboBox<String>();
 	//define the length of time we want to allow
 	private String[] times = {"05","10","15","20","30","40","50"};
 	//define font colors in a String array
@@ -156,7 +169,7 @@ public class Text extends JPanel{
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
 			startDuration = (String) startTimeSelect.getSelectedItem();
-			endDuration = (String) startTimeSelect.getSelectedItem();
+			endDuration = (String) endTimeSelect.getSelectedItem();
 		}
 		
 	};
@@ -199,14 +212,21 @@ public class Text extends JPanel{
 				JFileChooser fileSelector = new JFileChooser();
 				fileSelector.showOpenDialog(Text.this);
 				try {
+					//get File object of selected file
 					selectedFile = fileSelector.getSelectedFile().getAbsoluteFile();
+					//get absolute path (includes name of file) in fileDir
 					fileDir = fileSelector.getSelectedFile().getAbsolutePath();
+					//set label GUI component
 					filenameLabel.setText("Selected file: " + selectedFile.getName());
 					filenameLabel.setVisible(true);
 					filenameLabel.setFont(new Font(Font.SANS_SERIF,0,10));
+					//get path of file (excluding file name)
 					filepath = fileDir.substring(0, fileDir.lastIndexOf(File.separator));
+					//set the outputFile (unsaved file) as a dot file of selectedFile
 					outputFile = new File(filepath + "/." + selectedFile.getName());
 					addTxtButton.setEnabled(true);
+					//Playback.mediaFile = fileDir;
+					Playback.getInstance().playDownloadedVideo(fileDir);
 				} catch (NullPointerException e) {
 					return; //return since no file was selected
 				}
@@ -371,7 +391,27 @@ public class Text extends JPanel{
 		//set action listener to update preview box
 		colorSelect.addActionListener(textSettingsListener);
 		colorPanel.add(colorSelect);
-
+		//progress bar panel here
+		textPanel.add(progressPanel);
+		progressPanel.setLayout(new BoxLayout(progressPanel, BoxLayout.X_AXIS));
+		progressPanel.setMaximumSize(new Dimension(300,40));
+		progressPanel.setPreferredSize(new Dimension(300,40));
+		//progressPanel.add(new JLabel(" "), BorderLayout.NORTH);
+		progressPanel.add(progress);
+		progress.setPreferredSize(new Dimension(300,20));
+		//progress.setVisible(false);
+		progress.setStringPainted(true);
+		progressPanel.add(cancelText);
+		//add action listener to cancel swing worker
+		cancelText.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				addText.cancel(true);				
+			}
+		});
+		cancelText.setEnabled(false);
+		progressPanel.setVisible(false);
+		
 		mainPanel.add(textPanel); //add textPanel into 2nd column of grid
 		add(mainPanel, BorderLayout.CENTER); //add grid into center of GUI
 	}
@@ -473,18 +513,32 @@ public class Text extends JPanel{
 		
 		String _title;
 		String _credits;
+		String _text;
 		Process avconv;
 		//define output file for swingworker class instance
 		
 		@Override
 		protected Void doInBackground() throws Exception {
 			Files.deleteIfExists(outputFile.toPath()); //overwrite previous text operation
-			String cmd = "avconv -i \"" + fileDir + "\" -t 00:00:" + startDuration
-					+ " -vf \"drawtext="
-					+ "fontfile=\'" + Fonts.valueOf(currentFont)._path + "\': "
-					+ "text=\'" + _title + "\':"
-					+ "x=10:y=10:fontsize=" + font.getSize() + ":"
-					+ "fontcolor=" + fontColor + "\" " 
+			//get info needed from metadata
+			getMetaData();
+			//define progressbar between 0 and duration time
+			progress.setMaximum(Integer.parseInt(duration));
+			progressPanel.setVisible(true);
+			cancelText.setEnabled(true); //enable cancel
+			//disable add text button while running
+			addTxtButton.setEnabled(false);
+			//set text to start text. it will switch after halfway mark
+			_text = _title;
+			//bash command to apply text
+			String cmd = "avconv -i \"" + fileDir + "\" -strict experimental "
+					+ "-vf \"drawtext="
+					+ "fontfile=\'" + Fonts.valueOf(currentFont)._path + "\':"
+					+ "text=\'" + _text + "\':"
+					+ "x=(main_w/2-text_w/2):y=(main_h/2-text_h/2):fontsize=" + font.getSize() + ":"
+					+ "fontcolor=" + fontColor + ":"
+					+ "draw=\'lt(n,$((" + framerate + "*" + startDuration + ")))"
+					+ "+gt(n,$((" + framerate + "*(" + duration + "-" + endDuration + "))))\'\" "
 					+ outputFile.getAbsolutePath();
 			ProcessBuilder builder = new ProcessBuilder("/bin/bash","-c",cmd);
 	    	builder.redirectErrorStream(true); //redirect error to stdout
@@ -492,21 +546,120 @@ public class Text extends JPanel{
 	    	InputStream out = avconv.getInputStream();
 	    	BufferedReader stdout = new BufferedReader(new InputStreamReader(out));
 	    	String line;
+	    	Matcher matcher;
 	    	while ((line = stdout.readLine()) != null && !isCancelled()) {
-	    		System.out.println(line);
+	    		//match pattern time=000.00
+	    		matcher = Pattern.compile("time=\\d+.\\d+").matcher(line);
+	    		if (matcher.find()) {
+	    			int start = matcher.start();
+	    			int end = matcher.end() - 2; //minus 2 account for decimal points
+	    			String progressTime = line.substring(start,end)
+	    					.replaceAll("[^0-9]", ""); //eliminate "time=" and spaces
+	    			int progressNum = Integer.parseInt(progressTime);
+	    			publish(progressNum);
+	    			if (progressNum > Integer.parseInt(duration)/2) {
+	    				_text = _credits;
+	    			}
+	    		}
+	    		
 	    	}
 	    	System.out.println(avconv.waitFor());
 	    	avconv.destroy();
 			return null;
 		}
 		
+		//update progress bar
+		protected void process(List<Integer> chunks) {
+			for (Integer i : chunks) {
+				progress.setValue(i);
+				System.out.println(i);
+			}
+		}
+		
 		protected void done() {
-			saveButton.setEnabled(true);
-			video.playMedia(outputFile.toString());
-			pause.setVisible(true);
-			play.setVisible(false);
-			play.setEnabled(true);
-			toggleStopButtons(true);
+			if (!isCancelled()) {
+				saveButton.setEnabled(true);
+				video.playMedia(outputFile.toString());
+				pause.setVisible(true);
+				play.setVisible(false);
+				play.setEnabled(true);
+				toggleStopButtons(true);
+			}
+			
+			progressPanel.setVisible(false);
+			cancelText.setEnabled(false);
+			addTxtButton.setEnabled(true);
+		}
+		
+		/**
+		 * This helper method gets the frame rate of the video file we are using
+		 * by also being run in background with rest of SwingWorker.
+		 * @return
+		 * @throws Exception
+		 */
+		private void getMetaData() throws Exception {
+			String printCommand = "avconv -i \"" + fileDir + "\""; //prints data of file
+			//usual process setting up and starting
+			Process printMetadata;
+			ProcessBuilder avconv = new ProcessBuilder("/bin/bash","-c",printCommand);
+			printMetadata = avconv.start();
+			/* Read error stream into java input stream.
+			 * This works because our printCommand doesn't specify and output file
+			 * for avconv (since we just want to print the file details). This means
+			 * the output generated will be error stream (took way too long to figure this out :P ) 
+			 */
+			InputStream output = printMetadata.getErrorStream();
+			BufferedReader stdout = new BufferedReader(new InputStreamReader(output));
+			String line;
+			//set boolean values to know when all variables have been read
+			boolean frRead = false;
+			boolean resRead = false;
+			boolean timeRead = false;
+			while ((line = stdout.readLine()) != null) {
+				//check if line matches pattern
+				//pattern is 1 or more digits followed by SPACE fps
+				Matcher fpsMatch = Pattern.compile("\\d+ fps").matcher(line);
+				//check and set framerate
+				if (fpsMatch.find()) {
+					int start = fpsMatch.start();
+					int end = fpsMatch.end();
+					//create substring where match occurred and remove non-digits
+					framerate = line.substring(start,end).replaceAll("[^0-9]", "");
+					frRead = true;
+				}
+				//check and set width and height
+				Matcher resMatch = Pattern.compile("\\d+x\\d+").matcher(line);
+				if (resMatch.find()) {
+					int start = resMatch.start();
+					int end = resMatch.end();
+					//create substring where match occurred and split at "x"
+					String[] res = line.substring(start, end).split("x");
+					width = res[0].replaceAll("[^0-9]", ""); //set width
+					height = res[1].replaceAll("[^0-9]", "");
+					resRead = true;
+				}
+				//check and set duration in seconds
+				//pattern is "Duration: 00:00:00.00" format
+				Matcher timeMatch = Pattern.compile("Duration: \\d+:\\d+:\\d+.\\d+").matcher(line);
+				if (timeMatch.find()) {
+					int start = timeMatch.start(); //numbers start 9 chars in
+					int end = timeMatch.end();
+					int time = 0; //store total time in seconds
+					//create substring where numbers are and split at colon
+					String[] split = line.substring(start+9, end).split(":");
+					time += Integer.parseInt(split[0].replaceAll("[^0-9]", ""))*3600; //hour field
+					time += Integer.parseInt(split[1].replaceAll("[^0-9]", ""))*60; //minute field
+					time += Integer.parseInt(split[2].trim().substring(0, 1)); //seconds field (first 2 chars)
+					duration = Integer.toString(time);
+					timeRead = true;
+				}
+				//end method execution if all metadata has been found
+				if (frRead && resRead && timeRead) {
+					printMetadata.destroy();
+					return;
+				}
+			}
+			printMetadata.destroy(); //kill process
 		}
 		
 	}

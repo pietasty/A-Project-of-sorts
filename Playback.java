@@ -52,7 +52,7 @@ public class Playback extends JPanel {
 	private JSlider volume;
 	
 	private JButton chooser;
-	private String mediaFile;
+	public String mediaFile;
 
 	public static Playback getInstance() {
 		if (instance == null) {
@@ -437,4 +437,6 @@ public class Playback extends JPanel {
 			pause.setVisible(false);
 		}
 	}
+	
+	
 }
