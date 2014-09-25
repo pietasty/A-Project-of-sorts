@@ -30,6 +30,7 @@ public class OverLay extends JPanel {
 	
 	private OverLayWorker overlay;
 	
+	//Default location of where the output file is saved to.
 	private String defaultlocation;
 	
 	public static OverLay getInstance(){
@@ -40,6 +41,7 @@ public class OverLay extends JPanel {
 	}
 	
 	private OverLay() {
+		//default location is where the input file location is.
 		String file = Main.getInstance().original.getAbsolutePath();
 		defaultlocation = file.substring(0,file.lastIndexOf('/') + 1);
 		setSize(370,180);
@@ -50,12 +52,13 @@ public class OverLay extends JPanel {
 		setTextFields();
 	}
 	
+	//Sets the labels
 	private void setLabels(){
 		JLabel lblOutputFile = new JLabel("Output File");
 		lblOutputFile.setBounds(12, 76, 117, 15);
 		add(lblOutputFile);
 		
-		JLabel lblChoseReplacingAudio = new JLabel("Choose replacing audio");
+		JLabel lblChoseReplacingAudio = new JLabel("Choose Overlay audio");
 		lblChoseReplacingAudio.setBounds(12, 12, 190, 15);
 		add(lblChoseReplacingAudio);
 	}
