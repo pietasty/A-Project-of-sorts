@@ -64,15 +64,18 @@ public class Download extends JPanel {
 	private Download() {
 		setSize(900, 400);
 		setLayout(null);
+		//Allows resizing when absolute positioning is used
 		addHierarchyBoundsListener(new HierarchyBoundsAdapter() {
 			public void ancestorResized(HierarchyEvent e) {
 				resize();
 			}
 		});
 		status = 0;
+		//Sets the default location to the downloads folder
 		defaultlocation = System.getProperty("user.home") + "/Downloads/";
 		location = defaultlocation;
 		
+		//Adds the JComponents
 		setLabels();
 		downloadButton();
 		pauseButton();
@@ -98,6 +101,7 @@ public class Download extends JPanel {
 		add(urllabel);
 	}
 	
+	//Adds the Download Button
 	private void downloadButton() {
 		download = new JButton("Download");
 		download.addActionListener(new ActionListener() {
@@ -111,6 +115,7 @@ public class Download extends JPanel {
 				text = url.getText();
 				
 				File f;
+				//Checks whether the user has changed the location of where they want to save the file
 				if(location.equals(defaultlocation)){
 					fileName = text.substring(text.lastIndexOf('/') + 1, text.length());
 					f = new File(defaultlocation + fileName);
@@ -118,14 +123,14 @@ public class Download extends JPanel {
 					f = new File(location+fileName);
 				}
 				
+				//Checks if file already exists or not
 				if (f.exists()) {
 					// Asks user if they want to override or resume download
 					String[] option = { "resume download", "override" };
 					JComboBox select = new JComboBox(option);
 					String warning = "The file " + fileName + " already exists!" + System.lineSeparator() + "Do you want to resume download or override?";
 					Object[] obj = { warning, select };
-					JOptionPane.showMessageDialog(null, obj, "",
-							JOptionPane.OK_OPTION);
+					JOptionPane.showMessageDialog(null, obj, "",JOptionPane.OK_OPTION);
 					if (select.getSelectedIndex() == 0) {
 						status = 1;
 					} else {
@@ -142,9 +147,11 @@ public class Download extends JPanel {
 		add(download);
 	}
 	
+	//Adds the pause button
 	private void pauseButton(){
 		pause = new JButton("Pause");
 		pause.addActionListener(new ActionListener() {
+			//This stops the download but does not remove the file.
 			public void actionPerformed(ActionEvent e) {
 				status = 1;
 				cancel.setEnabled(false);
@@ -153,12 +160,13 @@ public class Download extends JPanel {
 				worker.cancel(true);
 			}
 		});
-		pause.setBounds(578, 170, 117, 25);
 		pause.setSize(117, 25);
 		pause.setVisible(false);
 		add(pause);
 	}
 	
+	//Adds the text field for url input
+	//TODO remove the set text
 	private void urlTextField(){
 		url = new JTextField();
 		url.setSize(345, 19);
@@ -166,6 +174,7 @@ public class Download extends JPanel {
 		add(url);
 	}
 	
+	//Adds the progressBar
 	private void setProgressBar(){
 		progressBar = new JProgressBar();
 		progressBar.setSize(445,25);
@@ -174,10 +183,12 @@ public class Download extends JPanel {
 		progressBar.setStringPainted(true);
 		add(progressBar);
 	}
-
+	
+	//Adds the check box to check if the downloaded file is open source
 	private void setOpenSource(){
 		open = new JCheckBox("Confirm it's open source");
 		open.addActionListener(new ActionListener() {
+			//Enables/disables the download button based on is selected or not
 			public void actionPerformed(ActionEvent e) {
 				if (open.isSelected()) {
 					download.setEnabled(true);
@@ -190,10 +201,12 @@ public class Download extends JPanel {
 		add(open);
 	}
 	
+	//Adds the cancel button
 	private void cancelButton(){
 		cancel = new JButton("Cancel");
 		cancel.addActionListener(new ActionListener() {
 			@Override
+			//This stops the download and removes the file
 			public void actionPerformed(ActionEvent e) {
 				status = 0;
 				cancel.setEnabled(false);
@@ -210,20 +223,23 @@ public class Download extends JPanel {
 		add(cancel);
 	}
 	
+	//Adds the save to button
 	private void saveToButton(){
 		saveTo = new JButton("Save to...");
 		saveTo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				//Opens up Jfile chooser
 				JFileChooser jfile = new JFileChooser();
 				
 				text = url.getText();
 				fileName = text.substring(text.lastIndexOf('/') + 1,text.length());
-				
+				//Sets the location to default location or the last place where a download occurred
 				File workingDirectory = new File(location);
 				jfile.setCurrentDirectory(workingDirectory);
 				
 				jfile.setSelectedFile(new File(fileName));
 				int response = jfile.showSaveDialog(getParent());
+				//Changes the file name and location
 				if (response == JFileChooser.APPROVE_OPTION) {
 					String file = jfile.getSelectedFile().toString();
 					fileName = file.substring(file.lastIndexOf('/') + 1, file.length());
@@ -238,6 +254,7 @@ public class Download extends JPanel {
 		
 	}
 	
+	//Simple check box that allows the user to play the downloaded file after it is downloaded.
 	private void playCheckBox(){
 		play = new JCheckBox("Play after download");
 		play.setSize(181, 23);
@@ -365,10 +382,11 @@ public class Download extends JPanel {
 		}
 	}
 	
-	
+	//Allows the panel to resize
 	private void resize(){
 		int x = Main.getInstance().getWidth();
 		
+		//Math done to set the location of the J Components
 		download.setLocation((x/2)+128, 170);
 		pause.setLocation((x/2)+128,170);
 		url.setLocation((x/2)-100, 44);
