@@ -230,7 +230,6 @@ public class Text extends JPanel{
 					//set the outputFile (unsaved file) as a dot file of selectedFile
 					outputFile = new File(filepath + "/." + Main.getInstance().original.getName());
 					addTxtButton.setEnabled(true);
-					//Playback.mediaFile = fileDir;
 					Playback.getInstance().enablePlay();
 				} catch (NullPointerException e) {
 					return; //return since no file was selected
