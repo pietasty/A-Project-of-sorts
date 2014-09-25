@@ -183,13 +183,17 @@ public class Playback extends JPanel {
 		play.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				timer.stop();
+				//Checks if the video was fast forwarded. 
 				if (speed != 0) {
 					speed = 0;
+				//Checks if the video video has been stopped
 				} else if (!(stop.isEnabled())) {
 					video.playMedia(Main.getInstance().original.getAbsolutePath());
 					pause.setVisible(true);
 					play.setVisible(false);
 					toggleStopButtons(true);
+				//Checks if the video has been paused.
+				//TODO when the change the file from other tabs... there is a slight problem.
 				} else if (!(video.isPlaying())) {
 					video.pause();
 					pause.setVisible(true);
@@ -440,5 +444,10 @@ public class Playback extends JPanel {
 		}
 	}
 	
+	public void enablePlay(){
+		play.setEnabled(true);
+		play.setVisible(true);
+		pause.setVisible(false);
+	}
 	
 }

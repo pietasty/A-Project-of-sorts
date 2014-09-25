@@ -19,8 +19,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.ExecutionException;
 
-public class Replace extends JPanel {
-	private static Replace instance;
+public class OverLay extends JPanel {
+	private static OverLay instance;
 	
 	private JTextField input;
 	private JTextField output;
@@ -28,18 +28,18 @@ public class Replace extends JPanel {
 	private String infile;
 	private String outfile;
 	
-	private ReplaceWorker replace;
+	private OverLayWorker overlay;
 	
 	private String defaultlocation;
 	
-	public static Replace getInstance(){
+	public static OverLay getInstance(){
 		if (instance == null){
-			instance = new Replace();
+			instance = new OverLay();
 		}
 		return instance;
 	}
 	
-	private Replace() {
+	private OverLay() {
 		String file = Main.getInstance().original.getAbsolutePath();
 		defaultlocation = file.substring(0,file.lastIndexOf('/') + 1);
 		setSize(370,180);
@@ -128,10 +128,10 @@ public class Replace extends JPanel {
 				outfile=outfile+".mp4";
 			}
 			
-			replace = new ReplaceWorker();
-			replace.execute();
+			overlay = new OverLayWorker();
+			overlay.execute();
 			try {
-				return replace.get();
+				return overlay.get();
 			} catch (InterruptedException | ExecutionException e) {
 				return 1;
 			}
@@ -139,14 +139,14 @@ public class Replace extends JPanel {
 	}
 	
 	
-	class ReplaceWorker extends SwingWorker<Integer,Void>{
+	class OverLayWorker extends SwingWorker<Integer,Void>{
 		private Process process;
 		@Override
 		protected Integer doInBackground() throws Exception {
 			ProcessBuilder builder;
 
 			builder  = new ProcessBuilder("avconv", "-i", Main.getInstance().original.getAbsolutePath(), 
-					"-i" , infile, "-c:v", "copy", "-c:a", "copy", "-map", "0:v", "-map", "1:a" ,"-y", outfile);
+					"-i" , infile,"-filter_complex", "amix=inputs=2", "-strict","experimental" ,"-y",outfile);
 			
 			// Sets up the builder and process
 			builder.redirectErrorStream(true);

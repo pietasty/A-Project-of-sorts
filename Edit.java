@@ -2,11 +2,9 @@ package se206_a03;
 
 import javax.swing.BoxLayout;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingWorker;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -16,18 +14,14 @@ import java.awt.GridLayout;
 import javax.swing.JButton;
 
 import se206_a03.editPanes.Extract;
+import se206_a03.editPanes.OverLay;
+import se206_a03.editPanes.Replace;
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 public class Edit extends JPanel{
 	
@@ -84,6 +78,7 @@ public class Edit extends JPanel{
 					}
 					if (status == 0){
 						JOptionPane.showMessageDialog(null, "Audio Extracted Successfully!");
+						video.playMedia(Extract.getInstance().getOutputFile());
 					} else if (status > 0) {
 						JOptionPane.showMessageDialog(null, "Error occurred in extraction");
 					}
@@ -95,6 +90,24 @@ public class Edit extends JPanel{
 		JButton replaceAudio = new JButton("Replace Audio");
 		replaceAudio.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				String[] options = {"Replace Audio","Cancel"};
+				JPanel panel = Replace.getInstance();
+				panel.setPreferredSize(new Dimension(370,180));
+				int status = -1;
+				while (status == -1 ) {
+					int n = JOptionPane.showOptionDialog(null, panel, "Replace Audio", JOptionPane.YES_NO_OPTION, JOptionPane.NO_OPTION, null, options, options[0]);
+					if (n == 0){
+						status = Replace.getInstance().startProcess();
+					} else {
+						break;
+					}
+					if (status == 0){
+						JOptionPane.showMessageDialog(null, "Audio Replaced Successfully!");
+						video.playMedia(Replace.getInstance().getOutputFile());
+					} else if (status > 0) {
+						JOptionPane.showMessageDialog(null, "Error occurred in Replacement of Audio!");
+					}
+				}
 			}
 		});
 		buttonPanel.add(replaceAudio);
@@ -102,46 +115,69 @@ public class Edit extends JPanel{
 		JButton overlayAudio = new JButton("Overlay Audio");
 		overlayAudio.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				String[] options = {"Overlay Audio","Cancel"};
+				JPanel panel = OverLay.getInstance();
+				panel.setPreferredSize(new Dimension(370,180));
+				int status = -1;
+				while (status == -1 ) {
+					int n = JOptionPane.showOptionDialog(null, panel, "Overlay Audio", JOptionPane.YES_NO_OPTION, JOptionPane.NO_OPTION, null, options, options[0]);
+					if (n == 0){
+						status = OverLay.getInstance().startProcess();
+					} else {
+						break;
+					}
+					if (status == 0){
+						JOptionPane.showMessageDialog(null, "Audio Overlayed Successfully!");
+						video.playMedia(OverLay.getInstance().getOutputFile());
+					} else if (status > 0) {
+						JOptionPane.showMessageDialog(null, "Error occurred in Overlaying of Audio!");
+					}
+				}
 			}
 		});
 		buttonPanel.add(overlayAudio);
 		
-		//create file chooser panel
-				JPanel choosePanel = new JPanel();
-				choosePanel.setLayout(new BorderLayout());
-				choosePanel.setMaximumSize(new Dimension(400,30));
-				choosePanel.add(chooser, BorderLayout.WEST); //add choose file
-				//set action listener to open up file chooser
-				chooser.addActionListener(new ActionListener() {
+		// create file chooser panel
+		JPanel choosePanel = new JPanel();
+		choosePanel.setLayout(new BorderLayout());
+		choosePanel.setMaximumSize(new Dimension(400, 30));
+		choosePanel.add(chooser, BorderLayout.WEST); // add choose file
+		// set action listener to open up file chooser
+		chooser.addActionListener(new ActionListener() {
 
-					@Override
-					public void actionPerformed(ActionEvent event) {
-						//open file chooser in new window
-						JFileChooser fileSelector = new JFileChooser();
-						fileSelector.showOpenDialog(Edit.this);
-						try {
-							//get File object of selected file
-							Main.getInstance().original = fileSelector.getSelectedFile().getAbsoluteFile();
-							//get absolute path (includes name of file) in fileDir
-							fileDir = fileSelector.getSelectedFile().getAbsolutePath();
-							//set label GUI component
-							filenameLabel.setText("Selected file: " + Main.getInstance().original.getName());
-							filenameLabel.setVisible(true);
-							filenameLabel.setFont(new Font(Font.SANS_SERIF,0,10));
-							//get path of file (excluding file name)
-							filepath = fileDir.substring(0, fileDir.lastIndexOf(File.separator));
-							//set the outputFile (unsaved file) as a dot file of selectedFile
-							inputFile = new File(filepath + "/." + Main.getInstance().original.getName());
-							Playback.getInstance().playDownloadedVideo(fileDir);
-						} catch (NullPointerException e) {
-							return; //return since no file was selected
-						}
-					}			
-				});
-				
-				choosePanel.add(filenameLabel, BorderLayout.EAST);
-				filenameLabel.setPreferredSize(new Dimension(250,30));
-				videoPanel.add(choosePanel); //add file chooser panel to GUI
+			@Override
+			public void actionPerformed(ActionEvent event) {
+				// open file chooser in new window
+				JFileChooser fileSelector = new JFileChooser();
+				fileSelector.showOpenDialog(Edit.this);
+				try {
+					// get File object of selected file
+					Main.getInstance().original = fileSelector
+							.getSelectedFile().getAbsoluteFile();
+					// get absolute path (includes name of file) in fileDir
+					fileDir = fileSelector.getSelectedFile().getAbsolutePath();
+					// set label GUI component
+					filenameLabel.setText("Selected file: "
+							+ Main.getInstance().original.getName());
+					filenameLabel.setVisible(true);
+					filenameLabel.setFont(new Font(Font.SANS_SERIF, 0, 10));
+					// get path of file (excluding file name)
+					filepath = fileDir.substring(0,
+							fileDir.lastIndexOf(File.separator));
+					// set the outputFile (unsaved file) as a dot file of
+					// selectedFile
+					inputFile = new File(filepath + "/."
+							+ Main.getInstance().original.getName());
+					Playback.getInstance().enablePlay();
+				} catch (NullPointerException e) {
+					return; // return since no file was selected
+				}
+			}
+		});
+
+		choosePanel.add(filenameLabel, BorderLayout.EAST);
+		filenameLabel.setPreferredSize(new Dimension(250, 30));
+		videoPanel.add(choosePanel); // add file chooser panel to GUI
 	}
 
 }
