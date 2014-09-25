@@ -41,9 +41,11 @@ public class Main extends JFrame {
 		vamixTabs.add("Download", Download.getInstance());
 		vamixTabs.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
+				//pause the playback video when switching to a new tab
 				if (!(vamixTabs.getSelectedComponent().equals(Playback.getInstance()))) {
 					Playback.getInstance().pauseVideo();
 				}
+				//updated the selected file label when switching to a different tab
 				if (!vamixTabs.getSelectedComponent().equals(Main.getInstance()) 
 						&& original != null) {
 					Text.getInstance().filenameLabel.setText("Selected file: "

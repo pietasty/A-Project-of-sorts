@@ -52,8 +52,10 @@ import javax.swing.JTextArea;
 public class Text extends JPanel{
 	
 	/*
-	 * TODO: 	* Check text input contains invalid characters such as :;/[]{}
-	 * 			* Get title and end text to work and check input duration isn't too long
+	 * TODO: 	
+	 * 			* Check input errors
+	 * 			* Add functionality to select text location as percentage of screen size
+	 * 			* Implement load functionality
 	 */
 	private static Text instance;
 	
