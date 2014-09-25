@@ -12,7 +12,6 @@ import java.awt.FontFormatException;
 import java.awt.GridLayout;
 import java.awt.Image;
 
-import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -20,10 +19,8 @@ import javax.swing.JEditorPane;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
-import javax.swing.JTextPane;
 import javax.swing.SwingWorker;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
@@ -47,7 +44,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JComboBox;
-import javax.swing.JTextArea;
 
 public class Text extends JPanel{
 	
@@ -73,7 +69,6 @@ public class Text extends JPanel{
 	private JButton forward = new JButton();
 	private JButton mute = new JButton();
 	private JButton sound = new JButton();
-	private JSlider volume = new JSlider();
 	private JButton chooser = new JButton("Choose file");
 	private JButton addTxtButton = new JButton("Add text");
 	private JButton saveButton = new JButton("Save changes");
@@ -201,6 +196,7 @@ public class Text extends JPanel{
 		playbackPanel.setLayout(new BoxLayout(playbackPanel, BoxLayout.X_AXIS));
 		playbackPanel.setMaximumSize(new Dimension(400,50));
 		//invoke methods to set up buttons and add to playbackPanel
+		playbackPanel.add(new JLabel("        "));
 		setupPlaybackButtons();
 		addPlaybackButtons(playbackPanel);
 		mediaPanel.add(playbackPanel);
@@ -723,7 +719,9 @@ public class Text extends JPanel{
 		
 	}
 	/**
-	 * Playback components are defined here
+	 * Playback components are defined here. The Text preview is simpler than Playback
+	 * since the preview doesn't require as many features. The fast forward and rewind
+	 * only skips for a second, not continuously.
 	 */
 	private void playButton() {
 		play = new JButton();
@@ -765,7 +763,6 @@ public class Text extends JPanel{
 	
 	private void stopButton(){
 		stop = new JButton();
-		
 		setIcon(stop,"/se206_a03/icons/stop.png");
 		
 		stop.addActionListener(new ActionListener() {

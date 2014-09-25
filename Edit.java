@@ -1,15 +1,20 @@
 package se206_a03;
 
+import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JSlider;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Image;
 
 import javax.swing.JButton;
 
@@ -22,10 +27,20 @@ import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.IOException;
 
 public class Edit extends JPanel{
 	
 	private static Edit instance;
+	private JButton play = new JButton();
+	private JButton pause = new JButton();
+	private JButton stop = new JButton();
+	private JButton back = new JButton();
+	private JButton forward = new JButton();
+	private JButton mute = new JButton();
+	private JButton sound = new JButton();
+	private JProgressBar progressBar = new JProgressBar();
+	private File outputFile;
 	
 	public static Edit getInstance() {
 		if (instance == null) {
@@ -51,8 +66,16 @@ public class Edit extends JPanel{
 		video = mediaPlayerComponent.getMediaPlayer();
 
 		videoPanel.add(mediaPlayerComponent);
+		//invoke methods to set up buttons and add to videoPanel
+		JPanel playPanel = new JPanel();
+		playPanel.setLayout(new BoxLayout(playPanel, BoxLayout.X_AXIS));
+		playPanel.setMaximumSize(new Dimension(450,20));
+		setupPlaybackButtons();
+		playPanel.add(new JLabel("               "));
+		addPlaybackButtons(playPanel);
+		videoPanel.add(playPanel);
 		videoPanel.add(new JLabel(" "));
-		videoPanel.setMaximumSize(new Dimension(450,250));
+		videoPanel.setMaximumSize(new Dimension(450,350));
 		videoPanel.setVisible(true);
 
 		add(videoPanel);
@@ -140,8 +163,9 @@ public class Edit extends JPanel{
 		// create file chooser panel
 		JPanel choosePanel = new JPanel();
 		choosePanel.setLayout(new BorderLayout());
-		choosePanel.setMaximumSize(new Dimension(400, 30));
+		choosePanel.setMaximumSize(new Dimension(450, 30));
 		choosePanel.add(chooser, BorderLayout.WEST); // add choose file
+		choosePanel.add(new JLabel(" "), BorderLayout.SOUTH);
 		// set action listener to open up file chooser
 		chooser.addActionListener(new ActionListener() {
 
@@ -178,6 +202,163 @@ public class Edit extends JPanel{
 		choosePanel.add(filenameLabel, BorderLayout.EAST);
 		filenameLabel.setPreferredSize(new Dimension(250, 30));
 		videoPanel.add(choosePanel); // add file chooser panel to GUI
+		JPanel progressPanel = new JPanel();
+		progressPanel.setMaximumSize(new Dimension(450,50));
+		progressBar.setPreferredSize(new Dimension(450,20));
+		progressPanel.add(progressBar);
+		add(new JLabel(" "));
+		add(progressPanel);
 	}
 
+	/**
+	 * Playback components are defined here. The Text preview is simpler than Playback
+	 * since the preview doesn't require as many features. The fast forward and rewind
+	 * only skips for a second, not continuously.
+	 */
+	private void playButton() {
+		play = new JButton();
+		
+		setIcon(play,"/se206_a03/icons/play.png");
+		
+		play.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (video.isPlayable()){
+					video.pause();
+					pause.setVisible(true);
+					play.setVisible(false);
+				} else {
+					video.playMedia(outputFile.toString());
+					pause.setVisible(true);
+					play.setVisible(false);
+					toggleStopButtons(true);
+				}
+			}
+		});
+		
+		play.setEnabled(false);
+	}
+	private void pauseButton(){
+		pause = new JButton();
+		
+		setIcon(pause,"/se206_a03/icons/pause.png");
+		
+		pause.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				video.pause();
+				pause.setVisible(false);
+				play.setVisible(true);
+			}
+		});
+		
+		pause.setVisible(false);
+	}
+	
+	private void stopButton(){
+		stop = new JButton();
+		setIcon(stop,"/se206_a03/icons/stop.png");
+		
+		stop.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				video.stop();
+				pause.setVisible(false);
+				play.setVisible(true);
+				toggleStopButtons(false);
+			}
+		});
+	}
+	private void muteButton(){
+		mute = new JButton();
+		
+		setIcon(mute,"/se206_a03/icons/mute.png");
+		
+		mute.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(video.isMute()){
+					if(video.getVolume() == 0){
+						video.setVolume(100);
+						setIcon(sound,"/se206_a03/icons/lowsound.png");
+					}
+					video.mute(false);
+					setIcon(mute,"/se206_a03/icons/mute.png");
+					
+				} else {
+					video.mute(true);
+					setIcon(mute,"/se206_a03/icons/lowsound.png");
+				}
+			}
+		});
+		
+		mute.setEnabled(false);
+	}
+	
+	private void forwardButton(){
+		forward = new JButton();
+		
+		setIcon(forward,"/se206_a03/icons/forward.png");
+		
+		forward.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				video.skip(1000);
+			}
+		});
+		
+		forward.setEnabled(false);
+	}
+	
+	private void backButton(){
+		back = new JButton();
+		
+		setIcon(back,"/se206_a03/icons/back.png");
+		
+		back.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				video.skip(-1000);
+			}
+		});
+		
+		back.setEnabled(false);
+	}
+	
+	private void setIcon(JButton button,String location){
+		try {
+			Image img = ImageIO.read(getClass().getResource(location));
+			button.setIcon(new ImageIcon(img));
+		} catch (IOException ex) {
+		}
+	}
+	
+	private void toggleStopButtons(boolean b){
+		stop.setEnabled(b);
+		back.setEnabled(b);
+		forward.setEnabled(b);
+		mute.setEnabled(b);
+		sound.setEnabled(b);
+	}
+	
+	/**
+	 * This method takes a JPanel as input and adds all the buttons
+	 * in the correct order to the panel.
+	 * @param panel
+	 */
+	public void addPlaybackButtons(JPanel panel) {
+		panel.add(play);
+		panel.add(pause);
+		panel.add(stop);
+		panel.add(forward);
+		panel.add(back);
+		panel.add(mute);
+	}
+	
+	/**
+	 * This helper method calls all the methods each button has to set up
+	 * their action listeners and icons
+	 */
+	public void setupPlaybackButtons() {
+		playButton();
+		pauseButton();
+		stopButton();
+		muteButton();
+		forwardButton();
+		backButton();
+	}
 }
