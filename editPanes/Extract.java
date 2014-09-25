@@ -9,6 +9,8 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.SwingWorker;
 
+import se206_a03.Main;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
@@ -26,6 +28,7 @@ public class Extract extends JPanel {
 	private ExtractWorker extract;
 	
 	private JTextField output;
+	//Stores the output file location if selected from jfile chooser
 	private String fullname;
 	
 	private JButton chooser;
@@ -42,8 +45,9 @@ public class Extract extends JPanel {
 	private JTextField endss;
 	
 	private JLabel time;
-	//TODO testing file
-	private String Test = "/media/ywu591/FREE4GB/sintel_trailer-480p.mp4";
+	
+	//Stores the location of where the Mainfile 
+	private String defaultlocation;
 	
 	public static Extract getInstance(){
 		if(instance == null){
@@ -53,6 +57,8 @@ public class Extract extends JPanel {
 	}
 	
 	private Extract(){
+		String file = Main.getInstance().original.getAbsolutePath();
+		defaultlocation = file.substring(0,file.lastIndexOf('/') + 1);
 		setSize(420,180);
 		setLayout(null);
 		
@@ -91,17 +97,13 @@ public class Extract extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				// Opens JFileChooser when button pressed
 				JFileChooser jfile = new JFileChooser();
-				//TODO set location to where the file is
-				File workingDirectory = new File(System.getProperty("user.dir"));
-				jfile.setCurrentDirectory(workingDirectory);
+				jfile.setCurrentDirectory(new File(defaultlocation));
 
 				int response = jfile.showSaveDialog(null);
 				if (response == JFileChooser.APPROVE_OPTION) {
 					fullname = jfile.getSelectedFile().toString();
-					String basename = fullname.substring(
-							fullname.lastIndexOf('/') + 1, fullname.length());
+					String basename = fullname.substring(fullname.lastIndexOf('/') + 1, fullname.length());
 					output.setText(basename);
-					System.out.println(fullname);
 				}
 
 				jfile.setVisible(true);
@@ -257,6 +259,14 @@ public class Extract extends JPanel {
 				}
 				to = h+":"+m+":"+s;
 			}
+			
+			if(fullname == null){
+				fullname = defaultlocation + output.getText();
+			}
+			if(!(fullname.charAt(fullname.length()-4) == '.')){
+				fullname=fullname+".mp3";
+			}
+			
 			extract = new ExtractWorker(start,to);
 			extract.execute();
 			try {
@@ -282,9 +292,9 @@ public class Extract extends JPanel {
 			
 			ProcessBuilder builder;
 			if (wholeFile.isSelected()){
-				builder  = new ProcessBuilder("avconv","-i",Test,"-ac","2","-vn","-y",fullname);
+				builder  = new ProcessBuilder("avconv","-i",Main.getInstance().original.getAbsolutePath(),"-ac","2","-vn","-y",fullname);
 			} else {
-				builder = new ProcessBuilder("avconv","-i",Test,"-ss",starttime,"-t",length,"-ac","2","-vn","-y",fullname);
+				builder = new ProcessBuilder("avconv","-i",Main.getInstance().original.getAbsolutePath(),"-ss",starttime,"-t",length,"-ac","2","-vn","-y",fullname);
 			}
 			
 			// Sets up the builder and process
@@ -306,5 +316,9 @@ public class Extract extends JPanel {
 			
 			return process.waitFor();
 		}
+	}
+	
+	public String getOutputFile(){
+		return fullname;
 	}
 }

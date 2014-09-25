@@ -231,7 +231,7 @@ public class Text extends JPanel{
 					outputFile = new File(filepath + "/." + Main.getInstance().original.getName());
 					addTxtButton.setEnabled(true);
 					//Playback.mediaFile = fileDir;
-					Playback.getInstance().playDownloadedVideo(fileDir);
+					Playback.getInstance().enablePlay();
 				} catch (NullPointerException e) {
 					return; //return since no file was selected
 				}
