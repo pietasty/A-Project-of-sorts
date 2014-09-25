@@ -3,11 +3,17 @@ package se206_a03;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -18,7 +24,9 @@ import com.sun.jna.Native;
 
 public class Main extends JFrame {
 	private static Main instance;
+	private FileChecker filechecker;
 	public File original;
+	
 	public static Main getInstance(){
 		if (instance == null){
 			instance = new Main();
@@ -45,6 +53,12 @@ public class Main extends JFrame {
 				if (!(vamixTabs.getSelectedComponent().equals(Playback.getInstance()))) {
 					Playback.getInstance().pauseVideo();
 				}
+				if (!(vamixTabs.getSelectedComponent().equals(Edit.getInstance()))) {
+					Edit.getInstance().pressStopButton();
+				}
+				if (!(vamixTabs.getSelectedComponent().equals(Text.getInstance()))) {
+					Text.getInstance().pressStopButton();
+				}
 				//updated the selected file label when switching to a different tab
 				if (!vamixTabs.getSelectedComponent().equals(Main.getInstance()) 
 						&& original != null) {
@@ -56,6 +70,8 @@ public class Main extends JFrame {
 							+ original.getName());
 					Edit.getInstance().filenameLabel.setVisible(true);
 					Edit.getInstance().filenameLabel.setFont(new Font(Font.SANS_SERIF,0,10));
+					Edit.getInstance().enableEditButtons(true);
+					Edit.getInstance().findNumberOfAudioTrack();
 				}
 			}
 		});
@@ -76,5 +92,55 @@ public class Main extends JFrame {
 			}
 		});
 	}
+	
+	public boolean checkFile(String s){
+		filechecker = new FileChecker(s);
+		filechecker.execute();
+		try{
+			int result = filechecker.get();
+			if (result > 0){
+				return true;
+			}
+			return false;
+		} catch (InterruptedException | ExecutionException e) {
+			return false;
+		}
+	}
+	
+	class FileChecker extends SwingWorker<Integer,Void>{
+		private Process process;
+		private String input;
+		
+		private FileChecker(String input){
+			this.input = input;
+		}
+		
+		@Override
+		protected Integer doInBackground() throws Exception {
+			int output = 0;
+			ProcessBuilder builder;
+			
+			String cmd = "file -b "+input+" | grep -c MPEG";
 
+			builder = new ProcessBuilder("/bin/bash","-c",cmd);
+			
+			// Sets up the builder and process
+			builder.redirectErrorStream(true);
+			try {
+				process = builder.start();
+				InputStream stdout = process.getInputStream();
+				BufferedReader stdoutBuffered = new BufferedReader(new InputStreamReader(stdout));
+				
+				String line = stdoutBuffered.readLine();
+				output = Integer.parseInt(line);
+				
+				stdoutBuffered.close();
+			} catch (IOException e) {
+
+			}
+			
+			return output;
+		}
+		
+	}
 }

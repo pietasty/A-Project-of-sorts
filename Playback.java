@@ -440,13 +440,17 @@ public class Playback extends JPanel {
 				//Allows the user to open a file and play the video/audio.
 				int response = jfile.showOpenDialog(null);
 				if (response == JFileChooser.APPROVE_OPTION) {
-					Main.getInstance().original = jfile.getSelectedFile();
-					video.playMedia(Main.getInstance().original.getAbsolutePath());
-					pause.setVisible(true);
-					play.setVisible(false);
-					play.setEnabled(true);
-					toggleStopButtons(true);
-					videoSliderClock.start();
+					if (Main.getInstance().checkFile(jfile.getSelectedFile().toString())) {
+						Main.getInstance().original = jfile.getSelectedFile();
+						video.playMedia(Main.getInstance().original.getAbsolutePath());
+						pause.setVisible(true);
+						play.setVisible(false);
+						play.setEnabled(true);
+						toggleStopButtons(true);
+						videoSliderClock.start();
+					} else {
+						JOptionPane.showMessageDialog(null, "Please select a Video or Audio file", "Error!", JOptionPane.ERROR_MESSAGE);
+					}
 				}
 				jfile.setVisible(true);
 			}

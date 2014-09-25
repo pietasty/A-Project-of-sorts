@@ -68,7 +68,6 @@ public class Text extends JPanel{
 	private JButton back = new JButton();
 	private JButton forward = new JButton();
 	private JButton mute = new JButton();
-	private JButton sound = new JButton();
 	private JButton chooser = new JButton("Choose file");
 	private JButton addTxtButton = new JButton("Add text");
 	private JButton saveButton = new JButton("Save changes");
@@ -215,20 +214,24 @@ public class Text extends JPanel{
 				JFileChooser fileSelector = new JFileChooser();
 				fileSelector.showOpenDialog(Text.this);
 				try {
-					//get File object of selected file
-					Main.getInstance().original = fileSelector.getSelectedFile().getAbsoluteFile();
-					//get absolute path (includes name of file) in fileDir
-					fileDir = fileSelector.getSelectedFile().getAbsolutePath();
-					//set label GUI component
-					filenameLabel.setText("Selected file: " + Main.getInstance().original.getName());
-					filenameLabel.setVisible(true);
-					filenameLabel.setFont(new Font(Font.SANS_SERIF,0,10));
-					//get path of file (excluding file name)
-					filepath = fileDir.substring(0, fileDir.lastIndexOf(File.separator));
-					//set the outputFile (unsaved file) as a dot file of selectedFile
-					outputFile = new File(filepath + "/." + Main.getInstance().original.getName());
-					addTxtButton.setEnabled(true);
-					Playback.getInstance().enablePlay();
+					if (Main.getInstance().checkFile(fileSelector.getSelectedFile().toString())){
+						//get File object of selected file
+						Main.getInstance().original = fileSelector.getSelectedFile().getAbsoluteFile();
+						//get absolute path (includes name of file) in fileDir
+						fileDir = fileSelector.getSelectedFile().getAbsolutePath();
+						//set label GUI component
+						filenameLabel.setText("Selected file: " + Main.getInstance().original.getName());
+						filenameLabel.setVisible(true);
+						filenameLabel.setFont(new Font(Font.SANS_SERIF,0,10));
+						//get path of file (excluding file name)
+						filepath = fileDir.substring(0, fileDir.lastIndexOf(File.separator));
+						//set the outputFile (unsaved file) as a dot file of selectedFile
+						outputFile = new File(filepath + "/." + Main.getInstance().original.getName());
+						addTxtButton.setEnabled(true);
+						Playback.getInstance().enablePlay();
+					} else {
+						JOptionPane.showMessageDialog(null, "Please select a Video or Audio file", "Error!", JOptionPane.ERROR_MESSAGE);
+					}
 				} catch (NullPointerException e) {
 					return; //return since no file was selected
 				}
@@ -767,12 +770,10 @@ public class Text extends JPanel{
 		
 		stop.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				video.stop();
-				pause.setVisible(false);
-				play.setVisible(true);
-				toggleStopButtons(false);
+				pressStopButton();
 			}
 		});
+		stop.setEnabled(false);
 	}
 	private void muteButton(){
 		mute = new JButton();
@@ -782,13 +783,8 @@ public class Text extends JPanel{
 		mute.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if(video.isMute()){
-					if(video.getVolume() == 0){
-						video.setVolume(100);
-						setIcon(sound,"/se206_a03/icons/lowsound.png");
-					}
 					video.mute(false);
 					setIcon(mute,"/se206_a03/icons/mute.png");
-					
 				} else {
 					video.mute(true);
 					setIcon(mute,"/se206_a03/icons/lowsound.png");
@@ -835,12 +831,21 @@ public class Text extends JPanel{
 		}
 	}
 	
+	/**
+	 * Gets called when we want to stop the video!
+	 */
+	public void pressStopButton(){
+		video.stop();
+		pause.setVisible(false);
+		play.setVisible(true);
+		toggleStopButtons(false);
+	}
+	
 	private void toggleStopButtons(boolean b){
 		stop.setEnabled(b);
 		back.setEnabled(b);
 		forward.setEnabled(b);
 		mute.setEnabled(b);
-		sound.setEnabled(b);
 	}
 	
 	/**
