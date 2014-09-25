@@ -252,7 +252,8 @@ public class Extract extends JPanel {
 	}
 
 	/**
-	 * executes the Extract command.
+	 * This process does the error handling for extract
+	 * return true if the user gives a valid input
 	 */
 	public boolean startProcess() {
 		// If a name was given but did not use fileChooser then file is
@@ -260,7 +261,7 @@ public class Extract extends JPanel {
 		if (fullname == null) {
 			fullname = defaultlocation + output.getText();
 		}
-		// If file does not have a file "extension, add one to the end"
+		// If file does not have a file "extension", add one to the end"
 		if (!(fullname.charAt(fullname.length() - 4) == '.')) {
 			fullname = fullname + ".mp3";
 		}
@@ -277,6 +278,7 @@ public class Extract extends JPanel {
 		} else if (!(checkValidMath())) {
 			JOptionPane.showMessageDialog(null, "Your math is horrible","Error!", JOptionPane.ERROR_MESSAGE);
 			return false;
+		//Checks the user does not override the original file
 		} else if (checkOverrideOriginal()) {
 			JOptionPane.showMessageDialog(null,"You cannot override the original file!", "Error!",JOptionPane.ERROR_MESSAGE);
 			return false;

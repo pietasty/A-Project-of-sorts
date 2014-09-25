@@ -76,6 +76,7 @@ public class Edit extends JPanel{
 	}
 	
 	private Edit() {
+		//Timer used to find the number of Audio Tracks in the main file.
 		t = new Timer(500, new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (video.isPlaying()){
@@ -115,19 +116,23 @@ public class Edit extends JPanel{
 		buttonPanel.setMaximumSize(new Dimension(450,40));
 		add(buttonPanel);
 		
+		//Extract audio button.
 		extractAudio = new JButton("Extract Audio");
 		extractAudio.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				//Warns user if it does not have an audio track.
 				if (audioTrackCount == 0){
 					JOptionPane.showMessageDialog(null, "This File does not have an Audio Track", "Warning!", JOptionPane.WARNING_MESSAGE);
 				}
 				
 				pressStopButton();
 				
+				//Brings up the extract pop up
 				String[] options = {"Extract","Cancel"};
 				JPanel panel = Extract.getInstance();
 				panel.setPreferredSize(new Dimension(420,180));
 				boolean status = false;
+				//Checks if user gives valid input or not.
 				while (!status) {
 					int n = JOptionPane.showOptionDialog(null, panel, "Extract Audio", JOptionPane.YES_NO_OPTION, JOptionPane.NO_OPTION, null, options, options[0]);
 					if (n == 0){
@@ -135,6 +140,7 @@ public class Edit extends JPanel{
 					} else {
 						break;
 					}
+					//If valid input, execute extract.
 					if(status){
 						enableEditButtons(false);
 						String fullname = Extract.getInstance().getOutputFile();
@@ -150,19 +156,23 @@ public class Edit extends JPanel{
 		extractAudio.setEnabled(false);
 		buttonPanel.add(extractAudio);
 		
+		//Replace audio button
 		replaceAudio = new JButton("Replace Audio");
 		replaceAudio.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				//warns user if there is not audio track
 				if (audioTrackCount == 0){
 					JOptionPane.showMessageDialog(null, "This File does not have an Audio Track", "Warning!", JOptionPane.WARNING_MESSAGE);
 				}
 				
 				pressStopButton();
 				
+				//pop up for replace audio
 				String[] options = {"Replace Audio","Cancel"};
 				JPanel panel = Replace.getInstance();
 				panel.setPreferredSize(new Dimension(370,180));
 				boolean status = false;
+				//Checks if user gives valid input or not
 				while (!status) {
 					int n = JOptionPane.showOptionDialog(null, panel, "Replace Audio", JOptionPane.YES_NO_OPTION, JOptionPane.NO_OPTION, null, options, options[0]);
 					if (n == 0){
@@ -170,6 +180,7 @@ public class Edit extends JPanel{
 					} else {
 						break;
 					}
+					//If valid input then replace Audio!
 					if (status){
 						enableEditButtons(false);
 						String input = Replace.getInstance().getReplaceFile();
@@ -184,19 +195,23 @@ public class Edit extends JPanel{
 		replaceAudio.setEnabled(false);
 		buttonPanel.add(replaceAudio);
 		
+		//Overlay audio button
 		overlayAudio = new JButton("Overlay Audio");
 		overlayAudio.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				//Warns user if the file does not have an audio track
 				if (audioTrackCount == 0){
 					JOptionPane.showMessageDialog(null, "This File does not have an Audio Track", "Warning!", JOptionPane.WARNING_MESSAGE);
 				}
 				
 				pressStopButton();
 				
+				//brings up the overlay pop up
 				String[] options = {"Overlay Audio","Cancel"};
 				JPanel panel = OverLay.getInstance();
 				panel.setPreferredSize(new Dimension(370,180));
 				boolean status = false;
+				//Checks for valid input
 				while (!status) {
 					int n = JOptionPane.showOptionDialog(null, panel, "Overlay Audio", JOptionPane.YES_NO_OPTION, JOptionPane.NO_OPTION, null, options, options[0]);
 					if (n == 0){
@@ -204,6 +219,7 @@ public class Edit extends JPanel{
 					} else {
 						break;
 					}
+					//if valid input then execute the command
 					if(status){
 						enableEditButtons(false);
 						String input = OverLay.getInstance().getOverlayFile();
@@ -305,7 +321,6 @@ public class Edit extends JPanel{
 		
 		pause.setVisible(false);
 	}
-	
 	private void stopButton(){
 		stop = new JButton();
 		setIcon(stop,"/se206_a03/icons/stop.png");
@@ -336,7 +351,6 @@ public class Edit extends JPanel{
 		
 		mute.setEnabled(false);
 	}
-	
 	private void forwardButton(){
 		forward = new JButton();
 		
@@ -350,7 +364,6 @@ public class Edit extends JPanel{
 		
 		forward.setEnabled(false);
 	}
-	
 	private void backButton(){
 		back = new JButton();
 		
@@ -447,6 +460,10 @@ public class Edit extends JPanel{
 		backButton();
 	}
 	
+	/**
+	 * This function is called when the user puts in a new "main" file
+	 * and it determines the number of audio tracks in that file
+	 */
 	public void findNumberOfAudioTrack(){
 		video.playMedia(Main.getInstance().original.getAbsolutePath());
 		t.start();
@@ -472,8 +489,8 @@ public class Edit extends JPanel{
 		}
 
 		@Override
-		protected Integer doInBackground() throws Exception {
-
+		protected Integer doInBackground() throws Exception {	
+			//The commands
 			ProcessBuilder builder;
 			if (wholeFile) {
 				builder = new ProcessBuilder("avconv", "-i",
@@ -493,25 +510,22 @@ public class Edit extends JPanel{
 				InputStream stdout = process.getInputStream();
 				BufferedReader stdoutBuffered = new BufferedReader(
 						new InputStreamReader(stdout));
-
 				String line = null;
 				while ((line = stdoutBuffered.readLine()) != null && !isCancelled()) {
-					System.out.println(line);
 					publish();
 				}
-
 				stdoutBuffered.close();
 			} catch (IOException e) {
-
 			}
-
 			return process.waitFor();
 		}
 		
+		//Updates progressBar so user knows the process is going on
 		protected void process(List<Void> chunks){
 			progressBar.setIndeterminate(true);
 		}
 		
+		//Reports to the user if extraction was successful or not
 		protected void done() {
 			try {
 				if (get() == 0){
@@ -547,7 +561,7 @@ public class Edit extends JPanel{
 		@Override
 		protected Integer doInBackground() throws Exception {
 			ProcessBuilder builder;
-
+			//The commands
 			builder  = new ProcessBuilder("avconv", "-i", Main.getInstance().original.getAbsolutePath(), 
 					"-i" , infile, "-c:v", "copy", "-c:a", "copy", "-map", "0:v", "-map", "1:a" ,"-y", outfile);
 			
@@ -557,25 +571,22 @@ public class Edit extends JPanel{
 				process = builder.start();
 				InputStream stdout = process.getInputStream();
 				BufferedReader stdoutBuffered = new BufferedReader(new InputStreamReader(stdout));
-				
 				String line = null;
 				while ((line = stdoutBuffered.readLine()) != null && !isCancelled()) {
-					System.out.println(line);
 					publish();
 				}
-
 				stdoutBuffered.close();
 			} catch (IOException e) {
-
 			}
-			
 			return process.waitFor();
 		}
 		
+		//Updates the progress bar so the user knows that processes are going on
 		protected void process(List<Void> chunks){
 			progressBar.setIndeterminate(true);
 		}
 		
+		//Reports to the user if Replacement of audio is done correctly or not
 		protected void done(){
 			try {
 				if(get() == 0){
@@ -611,7 +622,7 @@ public class Edit extends JPanel{
 		@Override
 		protected Integer doInBackground() throws Exception {
 			ProcessBuilder builder;
-
+			//The command
 			builder  = new ProcessBuilder("avconv", "-i", Main.getInstance().original.getAbsolutePath(), 
 					"-i" , infile,"-filter_complex", "amix=inputs=2", "-strict","experimental" ,"-y",outfile);
 			
@@ -621,25 +632,23 @@ public class Edit extends JPanel{
 				process = builder.start();
 				InputStream stdout = process.getInputStream();
 				BufferedReader stdoutBuffered = new BufferedReader(new InputStreamReader(stdout));
-				
 				String line = null;
 				while ((line = stdoutBuffered.readLine()) != null && !isCancelled()) {
-					System.out.println(line);
 					publish();
 				}
-
 				stdoutBuffered.close();
 			} catch (IOException e) {
-
 			}
 			
 			return process.waitFor();
 		}
 		
+		//Updates progress bar so the user knows that a process is running
 		protected void process(List<Void> chunks){
 			progressBar.setIndeterminate(true);
 		}
 		
+		//Reports to the user based on the result.
 		protected void done(){
 			try {
 				if (get() == 0){
@@ -657,5 +666,4 @@ public class Edit extends JPanel{
 			enableEditButtons(true);
 		}
 	}
-	
 }

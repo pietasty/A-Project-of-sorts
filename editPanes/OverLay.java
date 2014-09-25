@@ -39,7 +39,7 @@ public class OverLay extends JPanel {
 	}
 	
 	private OverLay() {
-		//default location is where the input file location is.
+		//default location is where the "main" file location is.
 		String file = Main.getInstance().original.getAbsolutePath();
 		defaultlocation = file.substring(0,file.lastIndexOf('/') + 1);
 		setSize(370,180);
@@ -61,7 +61,9 @@ public class OverLay extends JPanel {
 		add(lblChoseReplacingAudio);
 	}
 	
+	//Sets up the choosers
 	private void setChoosers(){
+		//Sets up the choose file for the infile
 		JButton btnNewButton = new JButton("Choose File");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -81,7 +83,7 @@ public class OverLay extends JPanel {
 		btnNewButton.setBounds(214, 39, 117, 25);
 		add(btnNewButton);
 		
-		
+		//sets up the save file for the outfile
 		JButton btnSaveFile = new JButton("Save To");
 		btnSaveFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -103,9 +105,12 @@ public class OverLay extends JPanel {
 		add(btnSaveFile);
 	}
 	
+	//Sets up the text fields
 	private void setTextFields(){
 		input = new JTextField();
 		input.setBounds(12, 39, 190, 25);
+		//User has to pick an audio file from the JFileChooser, can't just type in an name
+		//Thus that file has to exist
 		input.setEditable(false);
 		add(input);
 
@@ -114,6 +119,9 @@ public class OverLay extends JPanel {
 		add(output);
 	}
 	
+	/**
+	 * Checks that the user is not overriding the original file
+	 */
 	private boolean checkOverrideOriginal() {
 		if (Main.getInstance().original.getAbsolutePath().equals(outfile)) {
 			return true;
@@ -122,19 +130,25 @@ public class OverLay extends JPanel {
 	}
 	
 	public boolean startProcess() {
+		// If a name was given but did not use fileChooser then file is
+		// stored in default location
 		if(outfile == null){
 			outfile = defaultlocation + output.getText();
 		}
+		// If file does not have a file "extension", add one to the end"
 		if(!(outfile.charAt(outfile.length()-4) == '.')){
 			outfile=outfile+".mp4";
 		}
 		
+		//Checks the user gave an input file
 		if (input.getText().trim().equals("")) {
 			JOptionPane.showMessageDialog(null, "Please give a input filename!","Error!",JOptionPane.ERROR_MESSAGE);
 			return false;
+		//Checks user gave an output file name
 		} else if (output.getText().trim().equals("")) {
 			JOptionPane.showMessageDialog(null, "Please give a output filename!","Error!",JOptionPane.ERROR_MESSAGE);
 			return false;
+		//Checks user does not override the original main file
 		} else if (checkOverrideOriginal()) {
 			JOptionPane.showMessageDialog(null,"You cannot override the original file!", "Error!",JOptionPane.ERROR_MESSAGE);
 			return false;
@@ -153,10 +167,12 @@ public class OverLay extends JPanel {
 		}
 	}
 	
+	//Returns the output file name
 	public String getOutputFile(){
 		return outfile;
 	}
 	
+	//Returns the overlaying audio file name
 	public String getOverlayFile(){
 		return infile;
 	}
