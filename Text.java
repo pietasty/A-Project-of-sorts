@@ -52,8 +52,10 @@ import javax.swing.JTextArea;
 public class Text extends JPanel{
 	
 	/*
-	 * TODO: 	* Check text input contains invalid characters such as :;/[]{}
-	 * 			* Get title and end text to work and check input duration isn't too long
+	 * TODO: 	
+	 * 			* Check input errors
+	 * 			* Add functionality to select text location as percentage of screen size
+	 * 			* Implement load functionality
 	 */
 	private static Text instance;
 	
@@ -230,7 +232,6 @@ public class Text extends JPanel{
 					//set the outputFile (unsaved file) as a dot file of selectedFile
 					outputFile = new File(filepath + "/." + Main.getInstance().original.getName());
 					addTxtButton.setEnabled(true);
-					//Playback.mediaFile = fileDir;
 					Playback.getInstance().enablePlay();
 				} catch (NullPointerException e) {
 					return; //return since no file was selected
@@ -337,6 +338,7 @@ public class Text extends JPanel{
 				String title = startText.getText();
 				String credits = endText.getText();
 				if (Main.getInstance().original != null) {
+					updateFileFields();
 					addText = new TextWorker(title,credits);
 					addText.execute(); //execute swing worker class
 				} else {
@@ -424,6 +426,19 @@ public class Text extends JPanel{
 		add(mainPanel, BorderLayout.CENTER); //add grid into center of GUI
 	}
 	
+	/**
+	 * This helper method is called when add text is pressed (just before swing worker)
+	 * it updates the fileDir, filepath and outputFile fields to the currently selected
+	 * files.
+	 */
+	private void updateFileFields() {
+		fileDir = Main.getInstance().original.getAbsolutePath();
+		//get path of file (excluding file name)
+		filepath = fileDir.substring(0, fileDir.lastIndexOf(File.separator));
+		//set the outputFile (unsaved file) as a dot file of selectedFile
+		outputFile = new File(filepath + "/." + Main.getInstance().original.getName());
+	}
+
 	/*Create a TextDocumentFilter class that extends PlainDocument to handle 
 	the text input*/
 	class TextDocumentFilter extends PlainDocument{
@@ -446,13 +461,17 @@ public class Text extends JPanel{
 				 * @return
 				 */
 				public boolean validText(String text) {
-					//check character limit is exceeded
+					// check character limit is exceeded
 					if (text.length() > charLimit) {
 						return false;
 					}
-					//check new line limit is exceeded
+					// check new line limit is exceeded
 					String[] splitText = text.split("\n");
 					if (splitText.length >= lineLimit) {
+						return false;
+					}
+					//check for back slash characters as they mess up bash command
+					if (text.contains("\\")) {
 						return false;
 					}
 					return true; //return true otherwise
@@ -521,7 +540,6 @@ public class Text extends JPanel{
 		
 		String _title;
 		String _credits;
-		String _text;
 		Process avconv;
 		//define output file for swingworker class instance
 		
@@ -530,24 +548,39 @@ public class Text extends JPanel{
 			Files.deleteIfExists(outputFile.toPath()); //overwrite previous text operation
 			//get info needed from metadata
 			getMetaData();
+			//using some of the metadata check to see if there is any error
+			//with input
+			if (!isValidInput()) {
+				//cancel swing worker if input is not valid
+				//isValidInput method will create the popup error messages
+				this.cancel(true);
+			}
 			//define progressbar between 0 and duration time
 			progress.setMaximum(Integer.parseInt(duration));
 			progressPanel.setVisible(true);
 			cancelText.setEnabled(true); //enable cancel
 			//disable add text button while running
 			addTxtButton.setEnabled(false);
-			//set text to start text. it will switch after halfway mark
-			_text = _title;
 			//bash command to apply text
-			String cmd = "avconv -i \"" + fileDir + "\" -strict experimental "
-					+ "-vf \"drawtext="
+			/**
+			 * Applying both text filters to the same video in one bash command took
+			 * a long time to do. I learned how to use [in] and [out] filters
+			 * from the answer provided here 
+			 * http://stackoverflow.com/questions/11138832/ffmpeg-multiple-text-in-one-command-drawtext
+			 * and applied it to how we needed to use it
+			 */
+			String cmd = "avconv -threads 8 -i \"" + fileDir + "\" -strict experimental "
+					+ "-vf \"[in]drawtext="
 					+ "fontfile=\'" + Fonts.valueOf(currentFont)._path + "\':"
-					+ "text=\'" + _text + "\':"
+					+ "text=\'" + _title + "\':"
 					+ "x=(main_w/2-text_w/2):y=(main_h/2-text_h/2):fontsize=" + font.getSize() + ":"
 					+ "fontcolor=" + fontColor + ":"
-					+ "draw=\'lt(n,$((" + framerate + "*" + startDuration + ")))"
-					+ "+gt(n,$((" + framerate + "*(" + duration + "-" + endDuration + "))))\'\" "
-					+ outputFile.getAbsolutePath();
+					+ "draw=\'lt(n,$((" + framerate + "*" + startDuration + ")))\',"
+					+ "drawtext=fontfile=\'" + Fonts.valueOf(currentFont)._path + "\':"
+					+ "text=\'" + _credits + "\':x=(main_w/2-text_w/2):y=(main_h/2-text_h/2):"
+					+ "fontsize=" + font.getSize() + ":fontcolor=" + fontColor + ":"
+					+ "draw=\'gt(n,$((" + framerate + "*(" + duration + "-" + endDuration + "))))\'"
+					+ "[out]\" " + outputFile.getAbsolutePath();
 			ProcessBuilder builder = new ProcessBuilder("/bin/bash","-c",cmd);
 	    	builder.redirectErrorStream(true); //redirect error to stdout
 	    	avconv = builder.start();
@@ -565,9 +598,6 @@ public class Text extends JPanel{
 	    					.replaceAll("[^0-9]", ""); //eliminate "time=" and spaces
 	    			int progressNum = Integer.parseInt(progressTime);
 	    			publish(progressNum);
-	    			if (progressNum > Integer.parseInt(duration)/2) {
-	    				_text = _credits;
-	    			}
 	    		}
 	    		
 	    	}
@@ -576,6 +606,18 @@ public class Text extends JPanel{
 			return null;
 		}
 		
+		private boolean isValidInput() {
+			//check selected start + end duration doesn't exceed the total video length
+			if (Integer.parseInt(startDuration) + Integer.parseInt(endDuration)
+					> Integer.parseInt(duration)) {
+				JOptionPane.showMessageDialog(null, "Error: Selected start and end"
+						+ " time exceed file duration", "Error: Time input error", 
+						+ JOptionPane.ERROR_MESSAGE, null);
+				return false;
+			}
+			return true;
+		}
+
 		//update progress bar
 		protected void process(List<Integer> chunks) {
 			for (Integer i : chunks) {
@@ -625,15 +667,24 @@ public class Text extends JPanel{
 			boolean timeRead = false;
 			while ((line = stdout.readLine()) != null) {
 				//check if line matches pattern
-				//pattern is 1 or more digits followed by SPACE fps
-				Matcher fpsMatch = Pattern.compile("\\d+ fps").matcher(line);
+				//pattern is 1 or more digits followed by optional decimal point numbers then SPACE fps
+				Matcher fpsMatch = Pattern.compile("\\d+.?\\d+? fps").matcher(line);
 				//check and set framerate
 				if (fpsMatch.find()) {
 					int start = fpsMatch.start();
 					int end = fpsMatch.end();
-					//create substring where match occurred and remove non-digits
-					framerate = line.substring(start,end).replaceAll("[^0-9]", "");
+					String substring = line.substring(start, end);
 					frRead = true;
+					//if there's decimal point in substring set new end point at decimal
+					//and set framerate to be from zero to decimal point
+					if (substring.contains(".")) {
+						end = substring.indexOf('.');
+						framerate = substring.substring(0,end);
+					} else {
+						//create substring where match occurred and remove non-digits (this is executed if
+						//there is no decimal point
+						framerate = line.substring(start,end).replaceAll("[^0-9]", "");
+					}
 				}
 				//check and set width and height
 				Matcher resMatch = Pattern.compile("\\d+x\\d+").matcher(line);
@@ -657,7 +708,7 @@ public class Text extends JPanel{
 					String[] split = line.substring(start+9, end).split(":");
 					time += Integer.parseInt(split[0].replaceAll("[^0-9]", ""))*3600; //hour field
 					time += Integer.parseInt(split[1].replaceAll("[^0-9]", ""))*60; //minute field
-					time += Integer.parseInt(split[2].trim().substring(0, 1)); //seconds field (first 2 chars)
+					time += Integer.parseInt(split[2].trim().substring(0, 2)); //seconds field (first 2 chars)
 					duration = Integer.toString(time);
 					timeRead = true;
 				}
