@@ -53,9 +53,11 @@ public class Main extends JFrame {
 				if (!(vamixTabs.getSelectedComponent().equals(Playback.getInstance()))) {
 					Playback.getInstance().pauseVideo();
 				}
+				//Stop the video playing in the edit tab
 				if (!(vamixTabs.getSelectedComponent().equals(Edit.getInstance()))) {
 					Edit.getInstance().pressStopButton();
 				}
+				//Stop the video playing in the text tab
 				if (!(vamixTabs.getSelectedComponent().equals(Text.getInstance()))) {
 					Text.getInstance().pressStopButton();
 				}
@@ -71,7 +73,6 @@ public class Main extends JFrame {
 					Edit.getInstance().filenameLabel.setVisible(true);
 					Edit.getInstance().filenameLabel.setFont(new Font(Font.SANS_SERIF,0,10));
 					Edit.getInstance().enableEditButtons(true);
-					Edit.getInstance().findNumberOfAudioTrack();
 				}
 			}
 		});
@@ -120,7 +121,7 @@ public class Main extends JFrame {
 			int output = 0;
 			ProcessBuilder builder;
 			
-			String cmd = "file -b "+input+" | grep -c MPEG";
+			String cmd = "file -b \""+input+"\" | grep -c MPEG";
 
 			builder = new ProcessBuilder("/bin/bash","-c",cmd);
 			

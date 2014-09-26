@@ -8,7 +8,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JSlider;
 import javax.swing.SwingWorker;
 import javax.swing.Timer;
 
@@ -29,7 +28,6 @@ import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -563,7 +561,7 @@ public class Edit extends JPanel{
 			ProcessBuilder builder;
 			//The commands
 			builder  = new ProcessBuilder("avconv", "-i", Main.getInstance().original.getAbsolutePath(), 
-					"-i" , infile, "-c:v", "copy", "-c:a", "copy", "-map", "0:v", "-map", "1:a" ,"-y", outfile);
+						"-i" , infile, "-vcodec", "copy", "-acodec", "copy", "-map", "0:0", "-map", "1:0" ,"-y", outfile);
 			
 			// Sets up the builder and process
 			builder.redirectErrorStream(true);
@@ -578,6 +576,7 @@ public class Edit extends JPanel{
 				stdoutBuffered.close();
 			} catch (IOException e) {
 			}
+			
 			return process.waitFor();
 		}
 		
